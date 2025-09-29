@@ -1,0 +1,5 @@
+- [x] Corrigir schema.prisma para PostgreSQL
+- [x] Adicionar scripts de migração no package.json
+- [x] Corrigir import do Prisma no server.js
+- [x] Gerar cliente Prisma
+- [x] Executar migração inicial
