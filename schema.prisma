@@ -22,3 +22,13 @@ model Companies {
   cnpj String
   password String
 }
+
+model Test {
+  id      String   @id @default(uuid())
+  name   String   @unique
+}
+
+model User {
+  id      String   @id @default(uuid())
+  type   String   @unique
+}
