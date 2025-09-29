@@ -13,9 +13,13 @@ app.listen(3000, () => {
   console.log("Server running on port 3000");
 });
 
+
 app.use(cors({
-   origin: "http://localhost:5173"
-}))
+  origin: [
+    "http://localhost:5173", // seu ambiente local
+    "https://stocksafe.vercel.app" // frontend hospedado no Vercel
+  ]
+}));
 
 app.post("/companies", async (req, res) => {
   try {
