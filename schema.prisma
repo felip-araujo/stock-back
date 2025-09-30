@@ -13,22 +13,14 @@ enum user_profile {
 }
 
 model Companies {
-  id      String   @id @default(uuid())
-  name   String   @unique
-  type    String
-  representant     String
-  rep_num String
-  rep_email String
-  cnpj String
-  password String
-}
-
-model Test {
-  id      String   @id @default(uuid())
-  name   String   @unique
-}
-
-model User {
-  id      String   @id @default(uuid())
-  type   String   @unique
+  id          Int      @id @default(autoincrement())
+  name        String   @unique       // pode ser usado para login junto com email
+  type        String?
+  representant String?
+  rep_num     String?
+  rep_email   String   @unique       // para login
+  cnpj        String?  @unique
+  password    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
