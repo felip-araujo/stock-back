@@ -12,15 +12,30 @@ enum user_profile {
   employee
 }
 
-model Companies {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique       // pode ser usado para login junto com email
-  type        String?
-  representant String?
-  rep_num     String?
-  rep_email   String   @unique       // para login
-  cnpj        String?  @unique
-  password    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(EMPLOYEE)
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Company {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  cnpj         String   @unique
+  representant String
+  rep_email    String   @unique
+  rep_num      String
+  users        User[]
+  createdAt    DateTime @default(now())
+}
+
+enum Role {
+  SUPER_ADMIN  // Administrador global
+  COMPANY_ADMIN // Administrador da empresa
+  EMPLOYEE     // Funcionário
 }

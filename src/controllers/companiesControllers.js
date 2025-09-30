@@ -1,19 +1,19 @@
 import prisma from "../services/prismaClient.js";
 import bcrypt from "bcrypt";
 
-export const getCompanies = async (req, res) => {
+export const getCompany = async (req, res) => {
   const companyName = req.params.name;
 
   try {
-    const companies = await prisma.companies.findMany({
+    const company = await prisma.company.findMany({
       where: {
         name: companyName,
       },
     });
-    if (!companies || companies.length === 0) {
-      res.status(400).json({ message: "Nenhuma empresa encontrada." });
+    if (!company || company.length === 0) {
+      res.status(404).json({ message: "Nenhuma empresa encontrada." });
     } else {
-      res.json(companies);
+      res.json(company);
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -22,29 +22,53 @@ export const getCompanies = async (req, res) => {
 
 export const createCompany = async (req, res) => {
   try {
-    const { name, type, representant, rep_num, rep_email, cnpj, password } =
-      req.body;
+    const { name, cnpj, representant, rep_email, rep_num, password } = req.body;
 
     if (!rep_email || !name || !password) {
-      res
+      return res
         .status(400)
-        .json({ message: "Nome, e-mail, e senha são obrigatórios!" });
+        .json({ message: "Nome, e-mail e senha são obrigatórios!" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Verifica se já existe empresa ou email
+    const existingCompany = await prisma.company.findUnique({
+      where: { cnpj },
+    });
+    if (existingCompany) {
+      return res.status(400).json({ message: "Empresa já cadastrada!" });
+    }
 
-    const newCompany = await prisma.companies.create({
+    const existingUser = await prisma.user.findUnique({
+      where: { email: rep_email },
+    });
+    if (existingUser) {
+      return res.status(400).json({ message: "E-mail já está em uso!" });
+    }
+
+    // Cria empresa
+    const newCompany = await prisma.company.create({
       data: {
         name,
-        type,
-        representant,
-        rep_num,
-        rep_email,
         cnpj,
-        password: hashedPassword,
+        representant,
+        rep_email,
+        rep_num,
       },
     });
-    res.status(201).json({ message: "Cadastro Realizado!" });
+
+    // Cria usuário administrador da empresa
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await prisma.user.create({
+      data: {
+        name: representant,
+        email: rep_email,
+        password: hashedPassword,
+        role: "COMPANY_ADMIN",
+        companyId: newCompany.id,
+      },
+    });
+
+    res.status(201).json({ message: "Empresa e administrador cadastrados!" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -52,7 +76,7 @@ export const createCompany = async (req, res) => {
 
 export const updateCompany = async (req, res) => {
   try {
-    const upcompany = await prisma.companies.update({
+    const upcompany = await prisma.company.update({
       where: {
         name: req.params.name,
       },
@@ -78,7 +102,7 @@ export const deleteCompany = async (req, res) => {
   const compnyId = req.params.id;
 
   try {
-    const deleteCompany = await prisma.companies.delete({
+    const deleteCompany = await prisma.company.delete({
       where: {
         id: Number(compnyId),
       },
@@ -91,7 +115,7 @@ export const deleteCompany = async (req, res) => {
   } catch (err) {
     if ((err.code = "P2025")) {
       res
-        .status(400)
+        .status(404)
         .json({ message: "Nenhuma empresa encontrada com o Id informado." });
     } else {
       res.status(400).json({ message: err });
