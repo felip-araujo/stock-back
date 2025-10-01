@@ -11,7 +11,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: "http://localhost:3000", // URL base da sua API
+        url: "https://stock-back-vert.vercel.app", // URL base da sua API
       },
     ],
     components: {
