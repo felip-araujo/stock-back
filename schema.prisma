@@ -24,18 +24,30 @@ model User {
 }
 
 model Company {
-  id           Int      @id @default(autoincrement())
-  name         String   @unique
-  cnpj         String   @unique
+  id           Int       @id @default(autoincrement())
+  name         String    @unique
+  cnpj         String    @unique
   representant String
-  rep_email    String   @unique
+  rep_email    String    @unique
   rep_num      String
   users        User[]
-  createdAt    DateTime @default(now())
+  products     Product[]   // <-- relação com os produtos
+  createdAt    DateTime  @default(now())
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  stock       Int      @default(0)
+  companyId   Int
+  company     Company  @relation(fields: [companyId], references: [id])
+  createdAt   DateTime @default(now())
 }
 
 enum Role {
-  SUPER_ADMIN  // Administrador global
+  SUPER_ADMIN   // Administrador global
   COMPANY_ADMIN // Administrador da empresa
-  EMPLOYEE     // Funcionário
+  EMPLOYEE      // Funcionário
 }

@@ -11,9 +11,9 @@ import { authorize } from "../middleware/authorize.Middleware.js";
 const router = express.Router();
 
 router.get("/", authMiddleware, authorize(["SUPER_ADMIN"]), getCompany);
-router.get("/:name", getCompany);
+router.get("/:name", authMiddleware, authorize(["SUPER_ADMIN"]),  getCompany);
 router.post("/", createCompany);
-router.put("/:name", updateCompany);
-router.delete("/:id", deleteCompany);
+router.put("/:name", authMiddleware, authorize(["SUPER_ADMIN"]), updateCompany);
+router.delete("/:id", authMiddleware, authorize(["SUPER_ADMIN"]), deleteCompany);
 
 export default router;
