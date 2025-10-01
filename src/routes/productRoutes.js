@@ -10,11 +10,60 @@ import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
 
 const router = express.Router();
-
+/**
+ * @swagger
+ * /product:
+ *   post:
+ *     summary: Cria um produto para empresa
+ *     tags: [product]
+ *     responses:
+ *       200:
+ *         description: Cria novo produto no "estoque", precisa estar autenticado como ["COMPANY_ADMIN"]
+ */
 router.post("/", authMiddleware, authorize(["COMPANY_ADMIN"]), addProduct);
-router.get("/", authMiddleware, authorize(["COMPANY_ADMIN"]), getAllProducts);
-router.get("/:companyId", getProdsCompany);
-router.get("/:companyId/:productId", getOneProdCompany);
-router.delete("/:companyId/:productId", deleteProd);
+/**
+ * @swagger
+ * /product:
+ *   get:
+ *     summary: Retorna todos os produtos
+ *     tags: [product]
+ *     responses:
+ *       200:
+ *         description: Retorna todos os produtos cadastrados no estoque, precisa estar autenticado como ["SUPER_ADMIN"]
+ */
+router.get("/", authMiddleware, authorize(["SUPER_ADMIN"]), getAllProducts);
+/**
+ * @swagger
+ * /product/companyId:
+ *   get:
+ *     summary: Retorna todos os produtos de uma empresa
+ *     tags: [product]
+ *     responses:
+ *       200:
+ *         description: Retorna todos os produtos cadastrados no estoque da empresa, precisa informar o companyId(id) via params da empresa selecionada precisa estar autenticado como ["COMPANY_ADMIN"]
+ */
+router.get("/:companyId", authMiddleware, authorize(["COMPANY_ADMIN"]),getProdsCompany);
+/**
+ * @swagger
+ * /product/companyId/productId:
+ *    get:
+ *     summary: Retorna um único produto de uma empresa
+ *     tags: [product]
+ *     responses:
+ *       200:
+ *         description: Retorna um produto cadastrado no estoque da empresa, precisa informar o companyId(id) e productId via params da empresa selecionada, precisa estar autenticado como ["COMPANY_ADMIN"]
+ */
+router.get("/:companyId/:productId", authMiddleware, authorize(["COMPANY_ADMIN"]), getOneProdCompany);
+/**
+ * @swagger
+ * /product/companyId/productId:
+ *    delete:
+ *     summary: Deleta um produto de uma empresa
+ *     tags: [product]
+ *     responses:
+ *       200:
+ *         description: Deleta um produto cadastrado no estoque da empresa, precisa informar o companyId(id) e productId via params da empresa selecionada, precisa estar autenticado como ["COMPANY_ADMIN"]
+ */
+router.delete("/:companyId/:productId", authMiddleware, authorize(["COMPANY_ADMIN"]),deleteProd);
 
 export default router;

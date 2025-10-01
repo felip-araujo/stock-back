@@ -12,7 +12,7 @@ const router = express.Router();
  *     links: https://stock-back-vert.vercel.app/auth
  *     responses:
  *       200:
- *         description: Faz a autenticação de login e retorna o código JWT
+ *         description: Faz a autenticação de login e retorna o código JWT | login por meio de "email", "password"
  */
 router.post("/", login);
 

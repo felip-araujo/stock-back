@@ -15,7 +15,7 @@ const router = express.Router();
  *     tags: [user]
  *     responses:
  *       200:
- *         description: Pega Todos os Usuários(Apenas SUPER_ADMIN)
+ *         description: Retorna todos os usuários, precisa estar autenticado como ["SUPER_ADMIN"]
  */
 router.get("/", authMiddleware, authorize(["SUPER_ADMIN"]), getUsers);
 /**
@@ -26,9 +26,19 @@ router.get("/", authMiddleware, authorize(["SUPER_ADMIN"]), getUsers);
  *     tags: [user]
  *     responses:
  *       200:
- *         description: Cria novos usuarios
+ *         description: Cria novos usuários, precisa estar autenticado como ("SUPER_ADMIN")
  */
-router.post("/", createUser);
+router.post("/", authMiddleware, authorize(["SUPER_ADMIN"]), createUser);
+/**
+ * @swagger
+ * /user:
+ *   delete:
+ *     summary: Exclusão de Usuários
+ *     tags: [user]
+ *     responses:
+ *       200:
+ *         description: Deleta usuários, precisa passaro o ID do usuario via params, precisa estar autenticado como ("SUPER_ADMIN")
+ */
 router.delete("/:id", authMiddleware, authorize(["SUPER_ADMIN"]), deleteUsers);
 
 export default router;
