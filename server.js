@@ -16,7 +16,7 @@ app.use("/companies", companiesRoutes);
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/product", productRoutes);
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
