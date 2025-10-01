@@ -1,6 +1,5 @@
 import swaggerJsdoc from "swagger-jsdoc";
 
-// Configurações básicas do Swagger
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
@@ -11,7 +10,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: "https://stock-back-vert.vercel.app", // URL base da sua API
+        url: "http://localhost:3000",
       },
     ],
     components: {
@@ -23,17 +22,10 @@ const swaggerOptions = {
         },
       },
     },
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
   },
-  // Aqui você diz onde estão os arquivos de rotas que terão comentários JSDoc
   apis: ["./src/routes/*.js"],
 };
 
-// Gera a documentação
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 
 export default swaggerDocs;

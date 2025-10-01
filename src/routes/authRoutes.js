@@ -1,7 +1,7 @@
 import express from "express";
 import { login } from "../controllers/authControllers.js";
-const router = express.Router();
 
+const router = express.Router();
 
 /**
  * @swagger
@@ -9,6 +9,7 @@ const router = express.Router();
  *   post:
  *     summary: Rota de Autenticação
  *     tags: [auth]
+ *     links: https://stock-back-vert.vercel.app/auth
  *     responses:
  *       200:
  *         description: Faz a autenticação de login e retorna o código JWT
