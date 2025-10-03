@@ -7,6 +7,8 @@ import {
 } from "../controllers/userController.js";
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
+import { paginate } from "../middleware/paginate.Middeware.js";
+
 const router = express.Router();
 /**
  * @swagger
@@ -18,7 +20,7 @@ const router = express.Router();
  *       200:
  *         description: Retorna todos os usuários, precisa estar autenticado como ["SUPER_ADMIN"]
  */
-router.get("/:companyId", authMiddleware, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), getUsers);
+router.get("/:companyId", authMiddleware, paginate, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), getUsers);
 /**
  * @swagger
  * /user:

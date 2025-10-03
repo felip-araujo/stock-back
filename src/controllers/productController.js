@@ -29,10 +29,22 @@ export const addProduct = async (req, res) => {
 
 export const getAllProducts = async (req, res) => {
   try {
-    const produtos = await prisma.product.findMany();
-    if (produtos.length >= 1) {
-      res.status(200).json(produtos);
-    }
+    const produtos = await prisma.product.findMany({
+      skip: req.pagination.skip,
+      take: req.pagination.take,
+    });
+
+    const total = await prisma.product.count();
+
+    res.status(200).json({
+      data: produtos,
+      pagination: {
+        total,
+        page: req.pagination.page,
+        limit: req.pagination.limit,
+        totalPages: Math.ceil(total / req.pagination.limit),
+      },
+    });
   } catch (err) {
     res.status(400).json({ message: err });
   }
@@ -42,18 +54,29 @@ export const getProdsCompany = async (req, res) => {
   const companyId = Number(req.params.companyId);
 
   try {
+    // Buscar produtos com paginação
     const prod = await prisma.product.findMany({
-      where: {
-        companyId: companyId,
+      where: { companyId },
+      skip: req.pagination.skip,
+      take: req.pagination.take,
+    });
+
+    // Contar total de produtos (sem limite)
+    const total = await prisma.product.count({
+      where: { companyId },
+    });
+    // Retornar produtos + paginação
+    res.status(200).json({
+      data: prod,
+      pagination: {
+        total,
+        page: req.pagination.page,
+        limit: req.pagination.limit,
+        totalPages: Math.ceil(total / req.pagination.limit),
       },
     });
-    if (prod.length >= 1) {
-      res.status(200).json(prod);
-    } else {
-      res.status(400).json({ message: "Não há produtos em estoque" });
-    }
   } catch (err) {
-    res.status(400).json({ message: err });
+    res.status(500).json({ message: err.message });
   }
 };
 

@@ -8,6 +8,8 @@ import {
 } from "../controllers/productController.js";
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
+import { paginate } from "../middleware/paginate.Middeware.js";
+
 
 const router = express.Router();
 /**
@@ -31,7 +33,7 @@ router.post("/", authMiddleware, authorize(["COMPANY_ADMIN"]), addProduct);
  *       200:
  *         description: Retorna todos os produtos cadastrados no estoque, precisa estar autenticado como ["SUPER_ADMIN"]
  */
-router.get("/", authMiddleware, authorize(["SUPER_ADMIN"]), getAllProducts);
+router.get("/", authMiddleware, paginate, authorize(["SUPER_ADMIN"]), getAllProducts);
 /**
  * @swagger
  * /product/companyId:
@@ -42,7 +44,7 @@ router.get("/", authMiddleware, authorize(["SUPER_ADMIN"]), getAllProducts);
  *       200:
  *         description: Retorna todos os produtos cadastrados no estoque da empresa, precisa informar o companyId(id) via params da empresa selecionada precisa estar autenticado como ["COMPANY_ADMIN"]
  */
-router.get("/:companyId", authMiddleware, authorize(["COMPANY_ADMIN"]),getProdsCompany);
+router.get("/:companyId", authMiddleware, paginate, authorize(["COMPANY_ADMIN", "SUPER_ADMIN"]),getProdsCompany);
 /**
  * @swagger
  * /product/companyId/productId:
