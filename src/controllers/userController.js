@@ -39,7 +39,12 @@ export const createUser = async (req, res) => {
 };
 
 export const getUsers = async (req, res) => {
-  const user = await prisma.user.findMany();
+  const companyId = req.params.companyId;
+  const user = await prisma.user.findMany({
+    where: {
+      companyId: Number(companyId),
+    },
+  });
   if (!user || user.length === 0) {
     res.status(400).json({ message: "Nenhum usuário encontrado." });
   } else {
@@ -47,12 +52,46 @@ export const getUsers = async (req, res) => {
   }
 };
 
+export const updateUsers = async (req, res) => {
+  const companyId = req.params.companyId;
+  const idUsuario = req.params.id;
+  const { name, email, role, password } = req.body;
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  try {
+    const edit = await prisma.user.update({
+      where: {
+        companyId: Number(companyId),
+        id: Number(idUsuario),
+      },
+      data: {
+        name,
+        email,
+        role,
+        password: hashedPassword,
+      },
+    });
+
+    if (!edit || (edit.length === 0) | (edit === null)) {
+      res
+        .status(400)
+        .json({ message: "Não foi possível editar o usuario", err });
+    }
+
+    res.status(200).json({ message: "Usuario editado com sucesso!", edit });
+  } catch (err) {
+    res.status(400).json({ message: "Erro na requsição", err });
+  }
+};
+
 export const deleteUsers = async (req, res) => {
   const id_enviado = req.params.id;
+  const companyId = req.params.companyId;
 
   try {
     const deletar = await prisma.user.delete({
       where: {
+        companyId: Number(companyId),
         id: Number(id_enviado),
       },
     });

@@ -52,7 +52,7 @@ router.post("/", createCompany);
  *       200:
  *         description: Edita os dados de uma empresa, precisa passar o nome(name) da empresa via params, precisa estar autenticado como ["SUPER_ADMIN"]
  */
-router.put("/:name", authMiddleware, authorize(["SUPER_ADMIN"]), updateCompany);
+router.put("/:name", authMiddleware, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), updateCompany);
 /**
  * @swagger
  * /companies/id:

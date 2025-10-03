@@ -3,6 +3,7 @@ import {
   createUser,
   deleteUsers,
   getUsers,
+  updateUsers,
 } from "../controllers/userController.js";
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
@@ -17,7 +18,7 @@ const router = express.Router();
  *       200:
  *         description: Retorna todos os usuários, precisa estar autenticado como ["SUPER_ADMIN"]
  */
-router.get("/", authMiddleware, authorize(["SUPER_ADMIN"]), getUsers);
+router.get("/:companyId", authMiddleware, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), getUsers);
 /**
  * @swagger
  * /user:
@@ -28,7 +29,7 @@ router.get("/", authMiddleware, authorize(["SUPER_ADMIN"]), getUsers);
  *       200:
  *         description: Cria novos usuários, precisa estar autenticado como ("SUPER_ADMIN")
  */
-router.post("/", authMiddleware, authorize(["SUPER_ADMIN"]), createUser);
+router.post("/", authMiddleware, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), createUser);
 /**
  * @swagger
  * /user:
@@ -39,6 +40,8 @@ router.post("/", authMiddleware, authorize(["SUPER_ADMIN"]), createUser);
  *       200:
  *         description: Deleta usuários, precisa passaro o ID do usuario via params, precisa estar autenticado como ("SUPER_ADMIN")
  */
-router.delete("/:id", authMiddleware, authorize(["SUPER_ADMIN"]), deleteUsers);
+router.delete("/:companyId/:id", authMiddleware, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), deleteUsers);
+
+router.put("/:companyId/:id", authMiddleware,  authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]),  updateUsers)
 
 export default router;
