@@ -9,7 +9,7 @@ export const transporter = nodemailer.createTransport({
 });
 
 export const sendRecoveryEmail = async (to, token) => {
-  const url = `https://seusite.com/reset-password/${token}`;
+  const url = `https://stocksafe.vercel.app/reset-password/${token}`;
   await transporter.sendMail({
     from: `"Suporte" <${process.env.EMAIL_USER}>`,
     to,
