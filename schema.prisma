@@ -22,7 +22,7 @@ model User {
   company   Company? @relation(fields: [companyId], references: [id])
   createdAt DateTime @default(now())
 
-  passwordResets PasswordReset[]
+  passwordResets PasswordReset[] 
 }
 
 model Company {
