@@ -7,8 +7,9 @@ import companiesRoutes from "./src/routes/companiesRoutes.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
 import productRoutes from "./src/routes/productRoutes.js";
-import statsRoutes from "./src/routes/statsCompRoutes.js"
-
+import statsRoutes from "./src/routes/statsCompRoutes.js";
+import materialRoutes from "./src/routes/materialRoutes.js";
+import requestRoutes from "./src/routes/request.Routes.js"
 
 const app = express();
 
@@ -30,7 +31,9 @@ app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/product", productRoutes);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs, swaggerOptions));
-app.use("/dashstats", statsRoutes )
+app.use("/dashstats", statsRoutes);
+app.use("/material", materialRoutes);
+app.use("/requisicao", requestRoutes)
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
