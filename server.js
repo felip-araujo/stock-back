@@ -22,6 +22,7 @@ const swaggerOptions = {
 };
 
 app.use(cors());
+app.use(cors({ origin: "https://stocksafe.vercel.app" }));
 app.use(express.json());
 
 app.use("/companies", companiesRoutes);
