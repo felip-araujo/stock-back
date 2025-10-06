@@ -1,5 +1,5 @@
 import express from "express";
-import { login, requestPasswordRecovery, resetPassword } from "../controllers/authControllers.js";
+import { codeVerify, login, requestPasswordRecovery, resetPassword } from "../controllers/authControllers.js";
 
 const router = express.Router();
 
@@ -18,4 +18,5 @@ router.post("/", login);
 
 router.post("/recover-password", requestPasswordRecovery);
 router.post("/reset-password", resetPassword);
+router.post("/verify-code", codeVerify)
 export default router;

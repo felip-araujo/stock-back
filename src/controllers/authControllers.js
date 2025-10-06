@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import prisma from "../services/prismaClient.js";
 import { sendRecoveryEmail } from "../services/emailService.js";
 import dotenv from "dotenv";
+import { json } from "express";
 
 dotenv.config();
 
@@ -76,14 +77,15 @@ export const requestPasswordRecovery = async (req, res) => {
   // enviar e-mail com o código
   await sendRecoveryEmail(user.email, `Seu código de redefinição: ${code}`);
 
-  res.json({ message: "Código enviado para seu e-mail." });
+  res.json({ message: "Código enviado para seu e-mail.", user });
 };
 
 export const resetPassword = async (req, res) => {
-    const { email, code, newPassword } = req.body;
+  const { email, code, newPassword } = req.body;
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return res.status(404).json({ message: "Usuário não encontrado." });
+  if (!user)
+    return res.status(404).json({ message: "Usuário não encontrado." });
 
   const resetRequest = await prisma.passwordReset.findFirst({
     where: {
@@ -105,4 +107,50 @@ export const resetPassword = async (req, res) => {
   await prisma.passwordReset.delete({ where: { id: resetRequest.id } }); // remove o código
 
   res.json({ message: "Senha redefinida com sucesso!" });
+};
+
+export const codeVerify = async (req, res) => {
+  const clientCode = req.body.code;
+
+  if (!clientCode) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Código não fornecido." });
+  }
+
+  try {
+    const record = await prisma.passwordReset.findFirst({
+      where: {
+        code: clientCode,
+        expiresAt: {
+          gte: new Date(), // verifica se ainda não expirou
+        },
+      },
+      include: {
+        user: true, // se quiser acessar dados do usuário
+      },
+    });
+
+    if (!record) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Código inválido ou expirado." });
+    }
+
+    // opcional: pode deletar o código depois de usado
+    // await prisma.passwordReset.delete({ where: { id: record.id } });
+
+    return res
+      .status(200)
+      .json({
+        success: true,
+        message: "Código válido!",
+        userId: record.userId,
+      });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Erro ao verificar o código." });
+  }
 };
