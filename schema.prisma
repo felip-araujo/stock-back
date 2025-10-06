@@ -21,6 +21,8 @@ model User {
   companyId Int?
   company   Company? @relation(fields: [companyId], references: [id])
   createdAt DateTime @default(now())
+
+  passwordResets PasswordReset[]
 }
 
 model Company {
@@ -31,7 +33,7 @@ model Company {
   rep_email    String    @unique
   rep_num      String
   users        User[]
-  products     Product[]   // <-- relação com os produtos
+  products     Product[] // <-- relação com os produtos
   createdAt    DateTime  @default(now())
 }
 
@@ -46,8 +48,19 @@ model Product {
   createdAt   DateTime @default(now())
 }
 
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  code      String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+
 enum Role {
-  SUPER_ADMIN   // Administrador global
+  SUPER_ADMIN // Administrador global
   COMPANY_ADMIN // Administrador da empresa
-  EMPLOYEE      // Funcionário
+  EMPLOYEE // Funcionário
 }
