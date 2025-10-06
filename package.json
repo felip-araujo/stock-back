@@ -3,15 +3,12 @@
   "version": "1.0.0",
   "type": "module",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "migrate": "prisma migrate dev",
-    "generate": "prisma generate",
-    "start": "node server.js"
-     
-  },
-
-
+"scripts": {
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "migrate": "prisma migrate dev",
+  "generate": "prisma generate",
+  "vercel-build": "npx prisma generate"
+},
 
 
   "keywords": [],
