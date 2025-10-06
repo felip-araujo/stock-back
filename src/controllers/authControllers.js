@@ -74,7 +74,7 @@ export const requestPasswordRecovery = async (req, res) => {
   });
 
   // enviar e-mail com o código
-  await sendEmail(user.email, `Seu código de redefinição: ${code}`);
+  await sendRecoveryEmail(user.email, `Seu código de redefinição: ${code}`);
 
   res.json({ message: "Código enviado para seu e-mail." });
 };
