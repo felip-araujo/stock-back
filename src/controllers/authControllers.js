@@ -81,9 +81,9 @@ export const requestPasswordRecovery = async (req, res) => {
 };
 
 export const resetPassword = async (req, res) => {
-  const { email, code, newPassword } = req.body;
+  const { id, code, newPassword } = req.body;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({ where: { id } });
   if (!user)
     return res.status(404).json({ message: "Usuário não encontrado." });
 
