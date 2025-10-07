@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post("/", authMiddleware, authorize(["COMPANY_ADMIN"]), createMaterial);
 router.get("/:companyId", paginate, authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), verMaterial);
-router.get("/:companyId/:materialId", authMiddleware, authorize(["COMPANY_ADMIN"]), verMaterialUnico);
+router.get("/:companyId/:materialId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), verMaterialUnico);
 router.delete("/:companyId/:materialId", authMiddleware, authorize(["COMPANY_ADMIN"]), deleteMaterial);
 router.put("/:companyId/:materialId", authMiddleware, authorize(["COMPANY_ADMIN"]), editarMaterial);
 
