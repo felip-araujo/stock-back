@@ -20,3 +20,52 @@ export const criarRequisicao = async (req, res) => {
     console.error(err);
   }
 };
+
+export const verRequisicoes = async (req, res) => {
+  const companyId = req.params.companyId;
+
+  try {
+    const verRequisicoes = await prisma.materialRequest.findMany({
+      where: {
+        companyId: Number(companyId),
+      },
+
+      skip: req.pagination.skip,
+      take: req.pagination.take,
+    });
+
+    const total = await prisma.materialRequest.count();
+
+    res.status(200).json({
+      data: verRequisicoes,
+      pagination: {
+        total,
+        page: req.pagination.page,
+        limit: req.pagination.limit,
+        totalPages: Math.ceil(total / req.pagination.limit),
+      },
+    });
+  } catch (err) {
+    res.status(400).json({ message: "Erro ao buscar requisições" });
+    console.error(err)
+  }
+};
+
+export const excludeRequisicoes = async (req, res) => {
+  const companyId = req.params.companyId;
+  const idRequisicao = req.params.idRequisicao;
+
+  try {
+    const excluir = await prisma.materialRequest.delete({
+      where: {
+        companyId: Number(companyId),
+        id: Number(idRequisicao),
+      },
+    });
+    res.status(200).json({ message: "Requisição Excluída com suceso" });
+  } catch (err) {
+    res.status(400).json({ message: "Erro ao excluir requisição", err });
+    console.error(err);
+  }
+};
+
