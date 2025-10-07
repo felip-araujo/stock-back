@@ -39,7 +39,7 @@ export const createUser = async (req, res) => {
   }
 };
 
-export const getUsers = async (req, res) => { 
+export const getUsers = async (req, res) => {
   try {
     const companyId = Number(req.params.companyId);
 
@@ -72,7 +72,6 @@ export const getUsers = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 
 export const updateUsers = async (req, res) => {
   const companyId = req.params.companyId;
@@ -122,5 +121,49 @@ export const deleteUsers = async (req, res) => {
     }
   } catch (err) {
     res.status(400).json(err);
+  }
+};
+
+export const verMeusDados = async (req, res) => {
+  const companyId = req.params.companyId;
+  const userId = req.params.userId;
+
+  try {
+    const verDados = await prisma.user.findUnique({
+      where: {
+        companyId: Number(companyId),
+        id: Number(userId),
+      },
+    });
+
+    res.status(200).json({ data: verDados });
+  } catch (err) {
+    res.status(400).json({ message: "Erro ao buscar dados do usuário" });
+  }
+};
+
+export const alterarSenha = async (req, res) => {
+  const id_enviado = req.params.id;
+  const companyId = req.params.companyId;
+  const newPassword = req.body.newPassword; // <-- nome correto
+  
+
+  try {
+    // validação
+    if (!newPassword) {
+      return res.status(400).json({ message: "Nova senha é obrigatória" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: Number(id_enviado) },
+      data: { password: hashedPassword },
+    });
+
+    res.status(200).json({ message: "Senha alterada com sucesso!" });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: "Erro ao alterar senha", error: err });
   }
 };

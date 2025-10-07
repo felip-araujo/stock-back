@@ -1,9 +1,11 @@
 import express from "express";
 import {
+  alterarSenha,
   createUser,
   deleteUsers,
   getUsers,
   updateUsers,
+  verMeusDados,
 } from "../controllers/userController.js";
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
@@ -21,6 +23,9 @@ const router = express.Router();
  *         description: Retorna todos os usuários, precisa estar autenticado como ["SUPER_ADMIN"]
  */
 router.get("/:companyId", authMiddleware, paginate, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), getUsers);
+router.get("/:companyId/:userId", verMeusDados)
+
+
 /**
  * @swagger
  * /user:
@@ -44,6 +49,7 @@ router.post("/", authMiddleware, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), cr
  */
 router.delete("/:companyId/:id", authMiddleware, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), deleteUsers);
 
-router.put("/:companyId/:id", authMiddleware,  authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]),  updateUsers)
+router.put("/:companyId/:id", authMiddleware,  authorize(["SUPER_ADMIN", "COMPANY_ADMIN", "EMPLOYEE"]),  updateUsers)
+router.put("/alterar-senha/:companyId/:id", alterarSenha)
 
 export default router;
