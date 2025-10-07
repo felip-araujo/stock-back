@@ -7,7 +7,7 @@ import { authorize } from "../middleware/authorize.Middleware.js";
 const router = express.Router();
 
 router.post("/:companyId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), criarRequisicao);
-router.get("/:companyId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), paginate, verRequisicoes);
+router.get("/:companyId", authMiddleware, authorize(["COMPANY_ADMIN"]), paginate, verRequisicoes);
 router.delete("/:companyId/:idRequisicao", authMiddleware, authorize(["COMPANY_ADMIN"]), excludeRequisicoes);
 
 export default router;
