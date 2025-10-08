@@ -10,12 +10,19 @@ export const dashStats = async (req, res) => {
     const totalRequests = await prisma.materialRequest.count({
       where: { companyId },
     });
+    const pendingRequests = await prisma.materialRequest.count({
+      where: {
+        companyId,
+        status: "pending",
+      },
+    });
 
     res.status(200).json({
       totalUsers,
       totalProducts,
       totalMaterial,
       totalRequests,
+      pendingRequests,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
