@@ -73,3 +73,28 @@ export const excludeRequisicoes = async (req, res) => {
     console.error(err);
   }
 };
+
+export const gerenciarRequisicoes = async (req, res) => {
+  const companyId = req.params.companyId
+  const idRequisicao = req.params.idRequisicao;
+  const status = req.body.status;
+
+  try {
+    const alterar = await prisma.materialRequest.update({
+      where: {
+        companyId: Number(companyId),
+        id: Number(idRequisicao),
+      },
+      data: {
+        status: status
+      },
+    });
+
+    res
+      .status(200)
+      .json({ message: "Status alterado com sucesso:", status });
+  } catch (err) {
+    res.status(400).json({ message: "Erro ao atualizar requisição" });
+    console.error(err);
+  }
+};
