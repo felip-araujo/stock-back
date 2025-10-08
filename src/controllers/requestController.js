@@ -26,6 +26,10 @@ export const verRequisicoes = async (req, res) => {
 
   try {
     const verRequisicoes = await prisma.materialRequest.findMany({
+      relationLoadStrategy: "join",
+      include: {
+        user: true,
+      },
       where: {
         companyId: Number(companyId),
       },
@@ -47,7 +51,7 @@ export const verRequisicoes = async (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ message: "Erro ao buscar requisições" });
-    console.error(err)
+    console.error(err);
   }
 };
 
@@ -68,4 +72,3 @@ export const excludeRequisicoes = async (req, res) => {
     console.error(err);
   }
 };
-

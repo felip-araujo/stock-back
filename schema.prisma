@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -89,3 +90,5 @@ enum Role {
   COMPANY_ADMIN // Administrador da empresa
   EMPLOYEE // Funcionário
 }
+
+
