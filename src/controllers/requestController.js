@@ -29,6 +29,7 @@ export const verRequisicoes = async (req, res) => {
       relationLoadStrategy: "join",
       include: {
         user: true,
+        material: true,
       },
       where: {
         companyId: Number(companyId),
