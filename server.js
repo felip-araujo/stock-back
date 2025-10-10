@@ -10,6 +10,7 @@ import productRoutes from "./src/routes/productRoutes.js";
 import statsRoutes from "./src/routes/statsCompRoutes.js";
 import materialRoutes from "./src/routes/materialRoutes.js";
 import requestRoutes from "./src/routes/request.Routes.js"
+import stripeRoutes from "./src/routes/stripeRoutes.js";
 
 
 const app = express();
@@ -35,6 +36,7 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs, swaggerOptions));
 app.use("/dashstats", statsRoutes);
 app.use("/material", materialRoutes);
 app.use("/requisicao", requestRoutes)
+app.use("/stripe", stripeRoutes);
 
 
 app.listen(3000, () => {
