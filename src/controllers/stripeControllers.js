@@ -1,14 +1,15 @@
 
 import { createCustomer, createSubscriptionWithTrial, retrieveSubscription, cancelSubscription } from "../services/stripeService.js";
+import stripe from "../services/stripeService.js";
 import prisma from "../services/prismaClient.js";
 
 /**
  * Create a subscription for a company admin user
- * Expected body: { companyId, email, priceId }
+ * Expected body: { companyId, email, priceId, paymentMethodId }
  */
 export async function createSubscription(req, res) {
   try {
-    const { companyId, email, priceId } = req.body;
+    const { companyId, email, priceId, paymentMethodId } = req.body;
 
     // Check if company already has a subscription
     let existingSub;
@@ -27,6 +28,12 @@ export async function createSubscription(req, res) {
     // Create Stripe customer
     const customer = await createCustomer(email);
 
+    // Attach payment method to customer
+    await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId },
+    });
+
     // Create subscription with 7-day trial
     const subscription = await createSubscriptionWithTrial(customer.id, priceId);
 
@@ -44,8 +51,8 @@ export async function createSubscription(req, res) {
 
     return res.status(201).json({ subscription });
   } catch (error) {
-    return res.status(500).json({ error: "Internal server error" });
     console.error("Error creating subscription:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
 
