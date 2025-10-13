@@ -56,6 +56,49 @@ export const verRequisicoes = async (req, res) => {
   }
 };
 
+export const verRequisicaoPorUsuario = async (req, res) => {
+  const idUsuario = req.body.idUsuario;
+
+  if (!idUsuario || idUsuario === null) {
+    res.status(400).json({ message: "Id do usuaário nao fornecido" });
+  }
+
+  try {
+    const reqsById = await prisma.materialRequest.findMany({
+      where: {
+        userId: idUsuario,
+      },
+      skip: req.pagination.skip,
+      take: req.pagination.take,
+    });
+
+    const total = prisma.materialRequest.count({
+      where: {
+        userId: idUsuario,
+      },
+    });
+
+    if (reqsById.length === 0) {
+      res
+        .status(404)
+        .json({ message: "Nehuma requisição encontrada para o usuario" });
+    }
+
+    res.status(200).json({
+      data: reqsById,
+      pagination: {
+        total,
+        page: req.pagination.page,
+        limit: req.pagination.limit,
+        totalPages: Math.ceil(total / req.pagination.limit),
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: "Erro ao buscar requisições" });
+  }
+};
+
 export const excludeRequisicoes = async (req, res) => {
   const companyId = req.params.companyId;
   const idRequisicao = req.params.idRequisicao;
@@ -75,7 +118,7 @@ export const excludeRequisicoes = async (req, res) => {
 };
 
 export const gerenciarRequisicoes = async (req, res) => {
-  const companyId = req.params.companyId
+  const companyId = req.params.companyId;
   const idRequisicao = req.params.idRequisicao;
   const status = req.body.status;
 
@@ -86,13 +129,11 @@ export const gerenciarRequisicoes = async (req, res) => {
         id: Number(idRequisicao),
       },
       data: {
-        status: status
+        status: status,
       },
     });
 
-    res
-      .status(200)
-      .json({ message: "Status alterado com sucesso:", status });
+    res.status(200).json({ message: "Status alterado com sucesso:", status });
   } catch (err) {
     res.status(400).json({ message: "Erro ao atualizar requisição" });
     console.error(err);
