@@ -44,7 +44,7 @@ router.get("/", authMiddleware, paginate, authorize(["SUPER_ADMIN"]), getAllProd
  *       200:
  *         description: Retorna todos os produtos cadastrados no estoque da empresa, precisa informar o companyId(id) via params da empresa selecionada precisa estar autenticado como ["COMPANY_ADMIN"]
  */
-router.get("/:companyId", authMiddleware, paginate, authorize(["COMPANY_ADMIN", "SUPER_ADMIN"]),getProdsCompany);
+router.get("/:companyId", authMiddleware, paginate, authorize(["COMPANY_ADMIN", "SUPER_ADMIN", "EMPLOYEE"]),getProdsCompany);
 /**
  * @swagger
  * /product/companyId/productId:
