@@ -69,6 +69,10 @@ export const verRequisicaoPorUsuario = async (req, res) => {
 
   try {
     const reqsById = await prisma.materialRequest.findMany({
+      relationLoadStrategy: "join",
+      include: {
+        material: true, 
+      },
       where: {
         userId: Number(idUsuario),
       },
