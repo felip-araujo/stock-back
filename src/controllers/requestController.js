@@ -57,16 +57,20 @@ export const verRequisicoes = async (req, res) => {
 };
 
 export const verRequisicaoPorUsuario = async (req, res) => {
-  const idUsuario = req.body.idUsuario;
+  const companyId = req.params.companyId;
+  const idUsuario = req.params.idUsuario;
 
   if (!idUsuario || idUsuario === null) {
-    res.status(400).json({ message: "Id do usuaário nao fornecido" });
+    res.status(400).json({ message: "Id do usuário nao fornecido" });
+  }
+  if (!companyId || companyId === null) {
+    res.status(400).json({ message: "companyId não fornecido" });
   }
 
   try {
     const reqsById = await prisma.materialRequest.findMany({
       where: {
-        userId: idUsuario,
+        userId: Number(idUsuario),
       },
       skip: req.pagination.skip,
       take: req.pagination.take,
@@ -74,7 +78,7 @@ export const verRequisicaoPorUsuario = async (req, res) => {
 
     const total = prisma.materialRequest.count({
       where: {
-        userId: idUsuario,
+        userId: Number(idUsuario),
       },
     });
 

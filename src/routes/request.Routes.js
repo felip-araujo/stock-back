@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post("/:companyId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), criarRequisicao);
 router.get("/:companyId", authMiddleware, authorize(["COMPANY_ADMIN"]), paginate, verRequisicoes);
-router.get("/", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), paginate,  verRequisicaoPorUsuario)
+router.get("/:companyId/:idUsuario", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), paginate,  verRequisicaoPorUsuario)
 router.delete("/:companyId/:idRequisicao", authMiddleware, authorize(["COMPANY_ADMIN"]), excludeRequisicoes);
 router.put("/:companyId/:idRequisicao", gerenciarRequisicoes)
 
