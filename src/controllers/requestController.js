@@ -81,11 +81,12 @@ export const verRequisicaoPorUsuario = async (req, res) => {
       take: req.pagination.take,
     });
 
-    const total = prisma.materialRequest.count({
+    const total = await prisma.materialRequest.count({
       where: {
         userId: Number(idUsuario),
       },
     });
+
 
     if (reqsById.length === 0) {
       res
