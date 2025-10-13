@@ -1,12 +1,14 @@
-import { PrismaClient } from '@prisma/client';
+// prismaClient.js
+import { PrismaClient } from '@prisma/client'
 
-let prisma;
+let prisma
 
-if (global.prisma) {
-  prisma = global.prisma;
-} else {
-  prisma = new PrismaClient();
-  global.prisma = prisma;
+if (!global.prisma) {
+  global.prisma = new PrismaClient({
+    log: ['error', 'warn'], // opcional: logar erros
+  })
 }
 
-export default prisma;
+prisma = global.prisma
+
+export default prisma
