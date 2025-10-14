@@ -5,6 +5,7 @@ import {
   addProduct,
   deleteProd,
   getOneProdCompany,
+  editProd,
 } from "../controllers/productController.js";
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
@@ -67,5 +68,7 @@ router.get("/:companyId/:productId", authMiddleware, authorize(["COMPANY_ADMIN"]
  *         description: Deleta um produto cadastrado no estoque da empresa, precisa informar o companyId(id) e productId via params da empresa selecionada, precisa estar autenticado como ["COMPANY_ADMIN"]
  */
 router.delete("/:companyId/:productId", authMiddleware, authorize(["COMPANY_ADMIN"]),deleteProd);
+
+router.put("/:companyId/:prodId", editProd)
 
 export default router;
