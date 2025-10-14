@@ -6,31 +6,56 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const createCompanySubscription = async (req, res) => {
   const { companyId } = req.params;
-  const { priceId, paymentMethodId } = req.body;
+  const { priceId } = req.body;
 
   try {
-    if (!priceId || !paymentMethodId) {
-      return res.status(400).json({
-        message: 'priceId e paymentMethodId são obrigatórios'
-      });
+    if (!priceId) {
+      return res.status(400).json({ message: 'priceId é obrigatório' });
     }
 
-    const result = await createSubscription(Number(companyId), priceId, paymentMethodId);
-
-    res.status(201).json({
-      message: 'Assinatura criada com sucesso',
-      subscription: result.subscription,
-      stripeSubscription: result.stripeSubscription,
-      customer: result.customer
+    // Verifica se a empresa existe
+    const company = await prisma.company.findUnique({
+      where: { id: Number(companyId) },
+      include: { subscription: true }
     });
+
+    if (!company) {
+      return res.status(404).json({ message: "Empresa não encontrada" });
+    }
+
+    // Cria o cliente no Stripe se ainda não houver
+    let customerId = company.subscription?.stripeSubscriptionId ? undefined : undefined; // podemos deixar o Stripe criar automaticamente na sessão
+
+    // Cria a sessão de checkout
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      payment_method_types: ["card"],
+      customer_email: company.rep_email, // email da empresa
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${process.env.FRONTEND_URL}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/assinatura/cancelada`,
+      metadata: {
+        companyId: String(companyId)
+      },
+    });
+
+    // Retorna a URL para o frontend
+    res.status(200).json({
+      message: "Sessão de checkout criada com sucesso",
+      url: session.url,
+      sessionId: session.id,
+    });
+
   } catch (error) {
-    console.error('Erro ao criar assinatura:', error);
+    console.error("Erro ao criar sessão de assinatura:", error);
     res.status(500).json({
-      message: 'Erro ao criar assinatura',
-      error: error.message
+      message: "Erro ao criar sessão de assinatura",
+      error: error.message,
     });
   }
 };
+
+
 
 export const cancelCompanySubscription = async (req, res) => {
   const { companyId } = req.params;
