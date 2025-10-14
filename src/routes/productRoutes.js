@@ -69,6 +69,6 @@ router.get("/:companyId/:productId", authMiddleware, authorize(["COMPANY_ADMIN"]
  */
 router.delete("/:companyId/:productId", authMiddleware, authorize(["COMPANY_ADMIN"]),deleteProd);
 
-router.put("/:companyId/:prodId", editProd)
+router.put("/:companyId/:prodId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), editProd)
 
 export default router;

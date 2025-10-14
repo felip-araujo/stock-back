@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 
 export const createUser = async (req, res) => {
   try {
-    const { name, email, password, role, companyId } = req.body;
+    const { name, email, password, role, companyId, departmentId } = req.body;
 
     if (!name || !password || !companyId || !email || !role) {
       return res.status(400).json({
@@ -21,6 +21,18 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ message: "Usuário já existe!" });
     }
 
+    // Verifica se o departamento existe e pertence à empresa
+    if (departmentId) {
+      const department = await prisma.department.findUnique({
+        where: { id: Number(departmentId) },
+      });
+      if (!department || department.companyId !== Number(companyId)) {
+        return res.status(400).json({
+          message: "Departamento inválido ou não pertence à empresa",
+        });
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: {
@@ -29,6 +41,7 @@ export const createUser = async (req, res) => {
         password: hashedPassword,
         role,
         companyId,
+        departmentId: departmentId ? Number(departmentId) : null,
       },
     });
     return res
@@ -45,6 +58,10 @@ export const getUsers = async (req, res) => {
 
     // busca com paginação
     const users = await prisma.user.findMany({
+      relationLoadStrategy: "join",
+      include: {
+        department: true,
+      },
       where: { companyId },
       skip: req.pagination.skip,
       take: req.pagination.take,
@@ -76,21 +93,48 @@ export const getUsers = async (req, res) => {
 export const updateUsers = async (req, res) => {
   const companyId = req.params.companyId;
   const idUsuario = req.params.id;
-  const { name, email, role, password } = req.body;
+  const { name, email, role, password, departmentId } = req.body;
 
-  const hashedPassword = await bcrypt.hash(password, 10);
   try {
+    // Construir dados para atualização
+    const data = {};
+    if (name !== undefined) data.name = name;
+    if (email !== undefined) data.email = email;
+    if (role !== undefined) data.role = role;
+    if (password !== undefined) data.password = await bcrypt.hash(password, 10);
+
+    // Verifica se o departamento existe e pertence à empresa
+    if (departmentId !== undefined) {
+      if (departmentId === null) {
+        data.departmentId = null;
+      } else {
+        const department = await prisma.department.findUnique({
+          where: { id: Number(departmentId) },
+        });
+        if (!department || department.companyId !== Number(companyId)) {
+          return res.status(400).json({
+            message: "Departamento inválido ou não pertence à empresa",
+          });
+        }
+        data.departmentId = Number(departmentId);
+      }
+    }
+
+    // Verificar se pelo menos um campo foi fornecido
+    if (Object.keys(data).length === 0) {
+      return res
+        .status(400)
+        .json({
+          message: "Pelo menos um campo deve ser fornecido para edição.",
+        });
+    }
+
     const edit = await prisma.user.update({
       where: {
         companyId: Number(companyId),
         id: Number(idUsuario),
       },
-      data: {
-        name,
-        email,
-        role,
-        password: hashedPassword,
-      },
+      data,
     });
 
     if (!edit || (edit.length === 0) | (edit === null)) {
@@ -146,7 +190,6 @@ export const alterarSenha = async (req, res) => {
   const id_enviado = req.params.id;
   const companyId = req.params.companyId;
   const newPassword = req.body.newPassword; // <-- nome correto
-  
 
   try {
     // validação

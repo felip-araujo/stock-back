@@ -11,6 +11,7 @@ import productRoutes from "./src/routes/productRoutes.js";
 import statsRoutes from "./src/routes/statsCompRoutes.js";
 import materialRoutes from "./src/routes/materialRoutes.js";
 import requestRoutes from "./src/routes/request.Routes.js";
+import departmentRoutes from "./src/routes/departmentRoutes.js";
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use("/companies", companiesRoutes);
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/product", productRoutes);
+app.use("/department", departmentRoutes);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs, swaggerOptions));
 app.use("/dashstats", statsRoutes);
 app.use("/material", materialRoutes);
