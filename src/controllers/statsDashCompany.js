@@ -10,7 +10,7 @@ export const dashStats = async (req, res) => {
     const totalRequests = await prisma.materialRequest.count({
       where: { companyId },
     });
-    const pendingRequests = await prisma.materialRequest.count({
+    const pendingRequests = await prisma.request.count({
       where: {
         companyId,
         status: "pending",

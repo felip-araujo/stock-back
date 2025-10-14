@@ -2,22 +2,56 @@ import prisma from "../services/prismaClient.js";
 
 export const criarRequisicao = async (req, res) => {
   const companyId = req.params.companyId;
-  const { materialId, userId, quantity } = req.body;
+  const { userId, items } = req.body; // items: [{ materialId, quantity }, ...]
+
+  if (!userId || !items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({
+      message: "userId e items (array de materiais com materialId e quantity) são obrigatórios",
+    });
+  }
 
   try {
-    const novaRequisicao = await prisma.materialRequest.create({
-      data: {
-        materialId,
-        userId,
+    // Verificar se todos os materiais existem e pertencem à empresa
+    const materialIds = items.map(item => item.materialId);
+    const materials = await prisma.material.findMany({
+      where: {
+        id: { in: materialIds },
         companyId: Number(companyId),
-        quantity,
       },
     });
 
-    res.status(200).json({ message: "Requisicão enviada", novaRequisicao });
+    if (materials.length !== materialIds.length) {
+      return res.status(400).json({
+        message: "Um ou mais materiais não existem ou não pertencem à empresa",
+      });
+    }
+
+    // Criar a requisição com itens
+    const novaRequisicao = await prisma.request.create({
+      data: {
+        userId: Number(userId),
+        companyId: Number(companyId),
+        items: {
+          create: items.map(item => ({
+            materialId: item.materialId,
+            quantity: item.quantity,
+          })),
+        },
+      },
+      include: {
+        items: {
+          include: {
+            material: true,
+          },
+        },
+        user: true,
+      },
+    });
+
+    res.status(201).json({ message: "Requisição criada com sucesso", novaRequisicao });
   } catch (err) {
-    res.status(400).json("Erro ao enviar requisicão", err);
     console.error(err);
+    res.status(400).json({ message: "Erro ao criar requisição", error: err.message });
   }
 };
 
@@ -25,21 +59,30 @@ export const verRequisicoes = async (req, res) => {
   const companyId = req.params.companyId;
 
   try {
-    const verRequisicoes = await prisma.materialRequest.findMany({
-      relationLoadStrategy: "join",
-      include: {
-        user: true,
-        material: true,
-      },
+    const verRequisicoes = await prisma.request.findMany({
       where: {
         companyId: Number(companyId),
       },
-
+      include: {
+        user: true,
+        items: {
+          include: {
+            material: true,
+          },
+        },
+      },
       skip: req.pagination.skip,
       take: req.pagination.take,
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    const total = await prisma.materialRequest.count();
+    const total = await prisma.request.count({
+      where: {
+        companyId: Number(companyId),
+      },
+    });
 
     res.status(200).json({
       data: verRequisicoes,
@@ -68,30 +111,37 @@ export const verRequisicaoPorUsuario = async (req, res) => {
   }
 
   try {
-    const reqsById = await prisma.materialRequest.findMany({
-      relationLoadStrategy: "join",
-      include: {
-        material: true,
-        user: true,
-      },
+    const reqsById = await prisma.request.findMany({
       where: {
         userId: Number(idUsuario),
+        companyId: Number(companyId),
+      },
+      include: {
+        items: {
+          include: {
+            material: true,
+          },
+        },
+        user: true,
       },
       skip: req.pagination.skip,
       take: req.pagination.take,
-    });
-
-    const total = await prisma.materialRequest.count({
-      where: {
-        userId: Number(idUsuario),
+      orderBy: {
+        createdAt: 'desc',
       },
     });
 
+    const total = await prisma.request.count({
+      where: {
+        userId: Number(idUsuario),
+        companyId: Number(companyId),
+      },
+    });
 
     if (reqsById.length === 0) {
       res
         .status(404)
-        .json({ message: "Nehuma requisição encontrada para o usuario" });
+        .json({ message: "Nenhuma requisição encontrada para o usuario" });
     }
 
     res.status(200).json({
@@ -114,13 +164,13 @@ export const excludeRequisicoes = async (req, res) => {
   const idRequisicao = req.params.idRequisicao;
 
   try {
-    const excluir = await prisma.materialRequest.delete({
+    const excluir = await prisma.request.delete({
       where: {
-        companyId: Number(companyId),
         id: Number(idRequisicao),
+        companyId: Number(companyId),
       },
     });
-    res.status(200).json({ message: "Requisição Excluída com suceso" });
+    res.status(200).json({ message: "Requisição Excluída com sucesso" });
   } catch (err) {
     res.status(400).json({ message: "Erro ao excluir requisição", err });
     console.error(err);
@@ -133,10 +183,10 @@ export const gerenciarRequisicoes = async (req, res) => {
   const status = req.body.status;
 
   try {
-    const alterar = await prisma.materialRequest.update({
+    const alterar = await prisma.request.update({
       where: {
-        companyId: Number(companyId),
         id: Number(idRequisicao),
+        companyId: Number(companyId),
       },
       data: {
         status: status,
