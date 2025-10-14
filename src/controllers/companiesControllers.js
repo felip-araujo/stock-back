@@ -68,7 +68,11 @@ export const createCompany = async (req, res) => {
       },
     });
 
-    res.status(201).json({ message: "Empresa e administrador cadastrados!" });
+    res.status(201).json({
+      message: "Empresa e administrador cadastrados com sucesso!",
+      company: newCompany,
+      nextStep: "Para ativar a assinatura, configure um método de pagamento e selecione um plano."
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -19,7 +19,7 @@ const router = express.Router();
  *       200:
  *         description: Retorna todas as empresas cadastradas, precisa estar autenticado como ["SUPER_ADMIN"]
  */
-router.get("/", authMiddleware, authorize(["SUPER_ADMIN"]), getCompany);
+router.get("/",  getCompany);
 /**
  * @swagger
  * /companies/name:
