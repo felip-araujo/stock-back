@@ -13,7 +13,7 @@ import { authorize } from '../middleware/authorize.Middleware.js';
 const router = express.Router();
 
 // Criar assinatura para empresa
-router.post('/:companyId/subscribe', authMiddleware, authorize(['COMPANY_ADMIN']), createCompanySubscription);
+router.post('/:companyId/subscribe', createCompanySubscription);
 
 // Cancelar assinatura da empresa
 router.post('/:companyId/cancel', authMiddleware, authorize(['COMPANY_ADMIN']), cancelCompanySubscription);
