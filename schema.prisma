@@ -120,8 +120,11 @@ model Subscription {
   companyId           Int      @unique
   company             Company  @relation(fields: [companyId], references: [id])
   stripeSubscriptionId String   @unique
-  email               String
+  email               String?
   status              String   // "active" ou "inactive"
+  currentPeriodStart  DateTime?
+  currentPeriodEnd    DateTime?
+  updatedAt           DateTime @updatedAt
 }
 
 
