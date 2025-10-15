@@ -29,7 +29,7 @@ app.use(cors());
 // app.use(cors({ origin: "https://stocksafe.vercel.app" }));
 app.use(express.json());
 app.use(disconnectPrisma);
-
+ 
 app.use("/companies", companiesRoutes);
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
