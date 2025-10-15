@@ -22,6 +22,7 @@
     "nodemailer": "^7.0.6",
     "prisma": "^6.16.3",
     "stripe": "^19.1.0",
+    "stripe-cli": "^0.1.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-dist": "^5.29.1",
     "swagger-ui-express": "^5.0.1"
