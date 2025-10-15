@@ -175,6 +175,38 @@ export const handleStripeWebhook = async (req, res) => {
         });
         break;
 
+      case 'checkout.session.completed':
+        // Checkout concluído com sucesso
+        const session = event.data.object;
+        const companyId = session.metadata.companyId;
+
+        if (session.mode === 'subscription' && session.subscription) {
+          // Buscar a assinatura no Stripe para obter detalhes
+          const stripeSubscription = await stripe.subscriptions.retrieve(session.subscription);
+
+          // Salvar ou atualizar a assinatura no banco de dados
+          await prisma.subscription.upsert({
+            where: { companyId: Number(companyId) },
+            update: {
+              stripeSubscriptionId: stripeSubscription.id,
+              status: stripeSubscription.status,
+              currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+              currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+              updatedAt: new Date(),
+            },
+            create: {
+              stripeSubscriptionId: stripeSubscription.id,
+              status: stripeSubscription.status,
+              currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+              currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+              companyId: Number(companyId),
+            },
+          });
+
+          console.log('Assinatura criada/atualizada com sucesso para empresa:', companyId);
+        }
+        break;
+
       case 'customer.subscription.deleted':
         // Assinatura cancelada
         const canceledSubscription = event.data.object;

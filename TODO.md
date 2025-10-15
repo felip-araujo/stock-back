@@ -1,5 +1,4 @@
-- [x] Corrigir schema.prisma para PostgreSQL
-- [x] Adicionar scripts de migração no package.json
-- [x] Corrigir import do Prisma no server.js
-- [x] Gerar cliente Prisma
-- [x] Executar migração inicial
+- [x] Add webhook handler for 'checkout.session.completed' to save subscription in database when checkout is successful
+- [ ] Test the webhook endpoint to ensure it receives events from Stripe
+- [ ] Verify that subscription is created/updated in the database upon successful payment
+- [ ] Ensure success_url redirects properly (check frontend if needed)
