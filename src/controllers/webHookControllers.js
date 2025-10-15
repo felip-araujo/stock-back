@@ -1,6 +1,6 @@
+// src/controllers/subscriptionController.js
 import prisma from "../services/prismaClient.js";
-import stripe from "../services/stripeService";
-
+import stripe from "../services/stripeService.js";
 
 export const handleStripeWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
@@ -17,27 +17,25 @@ export const handleStripeWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // ⚡ Evento de checkout concluído
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
+  try {
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
 
-    // companyId foi enviado nos metadata ao criar a sessão
-    const companyId = session.metadata?.companyId;
-    const subscriptionId = session.subscription; // ID da assinatura Stripe
-    const customerEmail = session.customer_email;
+      const companyId = session.metadata?.companyId;
+      const subscriptionId = session.subscription;
+      const customerEmail = session.customer_email;
 
-    if (!companyId || !subscriptionId) {
-      console.error("Dados obrigatórios não encontrados no session metadata");
-      return res.status(400).send("Dados insuficientes");
-    }
+      if (!companyId || !subscriptionId) {
+        console.error("Dados obrigatórios não encontrados no session metadata");
+        return res.status(400).send("Dados insuficientes");
+      }
 
-    try {
+      // Upsert simples, sem datas
       await prisma.subscription.upsert({
         where: { companyId: Number(companyId) },
         update: {
           stripeSubscriptionId: subscriptionId,
           status: "active",
-          updatedAt: new Date(),
         },
         create: {
           companyId: Number(companyId),
@@ -47,13 +45,16 @@ export const handleStripeWebhook = async (req, res) => {
         },
       });
 
-      console.log(`✅ Assinatura da empresa ${companyId} salva com sucesso!`);
-    } catch (error) {
-      console.error("Erro ao salvar assinatura:", error);
-      return res.status(500).send("Erro ao salvar assinatura");
+      console.log(
+        `✅ Assinatura da empresa ${companyId} salva ou atualizada com sucesso!`
+      );
+    } else {
+      console.log(`Evento não tratado: ${event.type}`);
     }
-  }
 
-  // Você pode tratar outros tipos de eventos aqui (ex: subscription.deleted)
-  res.json({ received: true });
+    res.status(200).json({ received: true });
+  } catch (err) {
+    console.error("Erro ao processar webhook:", err);
+    res.status(500).send("Erro interno ao processar webhook");
+  }
 };

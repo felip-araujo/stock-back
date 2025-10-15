@@ -26,8 +26,13 @@ const swaggerOptions = {
   ],
 };
 
+
+app.use("/stripe", webHookRoutes);
+
+
 app.use(cors());
 // app.use(cors({ origin: "https://stocksafe.vercel.app" }));
+
 app.use(express.json());
 app.use(disconnectPrisma);
 
@@ -41,7 +46,7 @@ app.use("/dashstats", statsRoutes);
 app.use("/material", materialRoutes);
 app.use("/requisicao", requestRoutes);
 app.use("/subscription", subscriptionRoutes);
-app.use("/stripe", webHookRoutes, express.raw({ type: "application/json" }));
+
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
