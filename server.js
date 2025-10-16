@@ -1,4 +1,4 @@
-import express from "express";
+import express, { application } from "express";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocs from "./src/docs/swagger.js";
@@ -13,6 +13,7 @@ import materialRoutes from "./src/routes/materialRoutes.js";
 import requestRoutes from "./src/routes/request.Routes.js";
 import departmentRoutes from "./src/routes/departmentRoutes.js";
 import subscriptionRoutes from "./src/routes/subscriptionRoutes.js";
+import webHookRoutes from "./src/routes/webHookRoutes.js";
 
 const app = express();
 
@@ -25,8 +26,15 @@ const swaggerOptions = {
   ],
 };
 
+
+
+
+
 app.use(cors());
 // app.use(cors({ origin: "https://stocksafe.vercel.app" }));
+
+// Middleware para parsear JSON, mas deixar raw para webhooks
+app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(disconnectPrisma);
  
@@ -40,6 +48,8 @@ app.use("/dashstats", statsRoutes);
 app.use("/material", materialRoutes);
 app.use("/requisicao", requestRoutes);
 app.use("/subscription", subscriptionRoutes);
+app.use("/stripe", webHookRoutes);
+
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
