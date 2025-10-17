@@ -58,7 +58,7 @@ export const getUsers = async (req, res) => {
 
     // busca com paginação
     const users = await prisma.user.findMany({
-      relationLoadStrategy: "join",
+      
       include: {
         department: true,
       },

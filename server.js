@@ -36,7 +36,7 @@ app.use(cors());
 // Middleware para parsear JSON, mas deixar raw para webhooks
 app.use("/stripe", webHookRoutes);
 app.use(express.json());
-app.use(disconnectPrisma);
+
  
 app.use("/companies", companiesRoutes);
 app.use("/auth", authRoutes);

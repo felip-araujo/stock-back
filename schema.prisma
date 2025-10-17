@@ -1,12 +1,14 @@
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["relationJoins"]
+  
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
+  relationMode = "foreignKeys"
 }
+
 
 enum user_profile {
   admin
