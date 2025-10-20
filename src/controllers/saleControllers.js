@@ -94,7 +94,7 @@ export const getSalesDetail = async (req, res) => {
       include: {
         product: {
           select: {
-            name: true,
+            name: true, 
           },
         },
         user: {
