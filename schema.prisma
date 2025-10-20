@@ -23,6 +23,7 @@ model User {
   newRequests   Request[]         @relation("UserRequests")
   company       Company           @relation(fields: [companyId], references: [id])
   department    Department?       @relation(fields: [departmentId], references: [id])
+  sales         Sale[]
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([departmentId], map: "User_departmentId_fkey")
@@ -43,6 +44,7 @@ model Company {
   newRequests  Request[]         @relation("CompanyRequests")
   subscription Subscription?
   users        User[]
+  sales        Sale[]
 }
 
 model Product {
@@ -55,6 +57,7 @@ model Product {
   companyId   Int
   createdAt   DateTime @default(now())
   company     Company  @relation(fields: [companyId], references: [id])
+  sales       Sale[]
 
   @@index([companyId], map: "Product_companyId_fkey")
 }
@@ -150,6 +153,24 @@ model Department {
 
   @@unique([name, companyId])
   @@index([companyId], map: "Department_companyId_fkey")
+}
+
+model Sale {
+  id           Int      @id @default(autoincrement())
+  productId    Int
+  userId       Int // quem registrou a venda
+  companyId    Int // empresa vinculada à venda
+  buyerName    String
+  buyerCpfCnpj String
+  buyerEmail   String?
+  buyerPhone   String?
+  quantity     Int
+  totalPrice   Float
+  createdAt    DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  company Company @relation(fields: [companyId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
 }
 
 enum Role {

@@ -14,6 +14,7 @@ import requestRoutes from "./src/routes/request.Routes.js";
 import departmentRoutes from "./src/routes/departmentRoutes.js";
 import subscriptionRoutes from "./src/routes/subscriptionRoutes.js";
 import webHookRoutes from "./src/routes/webHookRoutes.js";
+import saleRoutes from "./src/routes/saleRoutes.js";
 
 const app = express();
 
@@ -26,10 +27,6 @@ const swaggerOptions = {
   ],
 };
 
-
-
-
-
 app.use(cors());
 // app.use(cors({ origin: "https://stocksafe.vercel.app" }));
 
@@ -37,7 +34,6 @@ app.use(cors());
 app.use("/stripe", webHookRoutes);
 app.use(express.json());
 
- 
 app.use("/companies", companiesRoutes);
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
@@ -48,8 +44,7 @@ app.use("/dashstats", statsRoutes);
 app.use("/material", materialRoutes);
 app.use("/requisicao", requestRoutes);
 app.use("/subscription", subscriptionRoutes);
-
-
+app.use("/sale", saleRoutes);
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
