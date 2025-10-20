@@ -7,6 +7,6 @@ const router = express.Router();
 router.post("/:companyId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), addSale);
 router.get("/:companyId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), getSalesDetail);
 router.get("/total/:companyId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), totalSalesValue);
-router.get("/total/:companyId/:userId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), totalSalesValueForUser);
+router.get("/total/user/:companyId/:userId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), totalSalesValueForUser);
 
 export default router;

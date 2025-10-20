@@ -148,7 +148,7 @@ export const totalSalesValueForUser = async (req, res) => {
     res.status(200).json({
       companyId,
       totalValue,
-      message: "Valor total de vendas calculado com sucesso!",
+      message: "Valor total de vendas do usuário calculado com sucesso!",
     });
   } catch (err) {
     console.error("Erro ao calcular total de vendas:", err);
