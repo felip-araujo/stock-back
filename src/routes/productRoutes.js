@@ -6,6 +6,7 @@ import {
   deleteProd,
   getOneProdCompany,
   editProd,
+  totalPriceProd,
 } from "../controllers/productController.js";
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
@@ -70,5 +71,8 @@ router.get("/:companyId/:productId", authMiddleware, authorize(["COMPANY_ADMIN"]
 router.delete("/:companyId/:productId", authMiddleware, authorize(["COMPANY_ADMIN"]),deleteProd);
 
 router.put("/:companyId/:prodId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), editProd)
+
+
+router.get("/total/price/:companyId", totalPriceProd)
 
 export default router;

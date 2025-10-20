@@ -110,7 +110,9 @@ export const editProd = async (req, res) => {
 
   // Verificar se pelo menos um campo foi fornecido
   if (Object.keys(data).length === 0) {
-    return res.status(400).json({ message: "Pelo menos um campo deve ser fornecido para edição." });
+    return res
+      .status(400)
+      .json({ message: "Pelo menos um campo deve ser fornecido para edição." });
   }
 
   try {
@@ -184,6 +186,28 @@ export const deleteProd = async (req, res) => {
     } else {
       res.status(200).json({ message: "Produto Deletado", deleteProd });
     }
+  } catch (err) {
+    res.status(400).json(err);
+  }
+};
+
+export const totalPriceProd = async (req, res) => {
+  const companyId = Number(req.params.companyId);
+
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        companyId: companyId,
+      },
+      select: { price: true, stock: true },
+    });
+
+    const totalPrice = products.reduce(
+      (acc, item) => acc + item.price * item.stock,
+      0
+    );
+
+    res.json({ totalPrice });
   } catch (err) {
     res.status(400).json(err);
   }
