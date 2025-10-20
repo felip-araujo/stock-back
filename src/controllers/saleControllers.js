@@ -91,6 +91,20 @@ export const getSalesDetail = async (req, res) => {
       where: {
         companyId: companyId,
       },
+      include: {
+        product: {
+          select: {
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      skip: req.pagination.skip,
+      take: req.pagination.take,
     });
 
     if (getSale.length === 0) {
@@ -98,7 +112,17 @@ export const getSalesDetail = async (req, res) => {
       return;
     }
 
-    res.status(200).json(getSale);
+    const total = await prisma.sale.count();
+
+    res.status(200).json({
+      data: getSale,
+      pagination: {
+        total,
+        page: req.pagination.page,
+        limit: req.pagination.limit,
+        totalPages: Math.ceil(total / req.pagination.limit),
+      },
+    });
   } catch (err) {
     res.status(400).json({ message: "Erro ao buscar dados" });
     console.error(err);
@@ -136,7 +160,7 @@ export const totalSalesValueForUser = async (req, res) => {
 
   try {
     const total = await prisma.sale.aggregate({
-      where: { companyId, userId},
+      where: { companyId, userId },
       _sum: {
         totalPrice: true,
       },
