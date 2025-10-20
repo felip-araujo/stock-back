@@ -1,18 +1,12 @@
 generator client {
   provider = "prisma-client-js"
-  
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-  relationMode = "foreignKeys"
-}
-
-
-enum user_profile {
-  admin
-  employee
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  relationMode      = "foreignKeys"
 }
 
 model User {
@@ -22,13 +16,16 @@ model User {
   password      String
   role          Role              @default(EMPLOYEE)
   companyId     Int
-  company       Company           @relation(fields: [companyId], references: [id])
   departmentId  Int?
-  department    Department?       @relation(fields: [departmentId], references: [id])
-  requests      MaterialRequest[] @relation("UserRequests")
-  newRequests   Request[]         @relation("UserRequests")
   createdAt     DateTime          @default(now())
+  requests      MaterialRequest[] @relation("UserRequests")
   PasswordReset PasswordReset[]
+  newRequests   Request[]         @relation("UserRequests")
+  company       Company           @relation(fields: [companyId], references: [id])
+  department    Department?       @relation(fields: [departmentId], references: [id])
+
+  @@index([companyId], map: "User_companyId_fkey")
+  @@index([departmentId], map: "User_departmentId_fkey")
 }
 
 model Company {
@@ -38,73 +35,87 @@ model Company {
   representant String
   rep_email    String            @unique
   rep_num      String
-  users        User[]
-  products     Product[]
+  createdAt    DateTime          @default(now())
+  departments  Department[]
   materials    Material[]
   requests     MaterialRequest[] @relation("CompanyRequests")
+  products     Product[]
   newRequests  Request[]         @relation("CompanyRequests")
-  departments  Department[]
   subscription Subscription?
-  createdAt    DateTime          @default(now())
+  users        User[]
 }
 
 model Product {
   id          Int      @id @default(autoincrement())
   name        String
   description String?
+  codigo      String?
   price       Float
   stock       Int      @default(0)
   companyId   Int
-  company     Company  @relation(fields: [companyId], references: [id])
   createdAt   DateTime @default(now())
+  company     Company  @relation(fields: [companyId], references: [id])
+
+  @@index([companyId], map: "Product_companyId_fkey")
 }
 
 model Material {
-  id          Int               @id @default(autoincrement())
-  name        String
-  description String?
-  group       String?
-  companyId   Int
-  company     Company           @relation(fields: [companyId], references: [id])
-  requests    MaterialRequest[] @relation("MaterialRequests")
-  requestItems RequestItem[]    @relation("MaterialRequests")
-  createdAt   DateTime          @default(now())
+  id           Int               @id @default(autoincrement())
+  name         String
+  description  String?
+  group        String?
+  codigo       String?
+  companyId    Int
+  createdAt    DateTime          @default(now())
+  company      Company           @relation(fields: [companyId], references: [id])
+  requests     MaterialRequest[] @relation("MaterialRequests")
+  requestItems RequestItem[]     @relation("MaterialRequests")
+
+  @@index([companyId], map: "Material_companyId_fkey")
 }
 
 model Request {
-  id         Int           @id @default(autoincrement())
-  userId     Int
-  user       User          @relation("UserRequests", fields: [userId], references: [id])
-  companyId  Int
-  company    Company       @relation("CompanyRequests", fields: [companyId], references: [id])
-  status     String        @default("pending")
-  items      RequestItem[]
-  createdAt  DateTime      @default(now())
+  id        Int           @id @default(autoincrement())
+  userId    Int
+  companyId Int
+  status    String        @default("pending")
+  createdAt DateTime      @default(now())
+  company   Company       @relation("CompanyRequests", fields: [companyId], references: [id])
+  user      User          @relation("UserRequests", fields: [userId], references: [id])
+  items     RequestItem[]
+
+  @@index([companyId], map: "Request_companyId_fkey")
+  @@index([userId], map: "Request_userId_fkey")
 }
 
 model RequestItem {
   id         Int      @id @default(autoincrement())
   requestId  Int
-  request    Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
   materialId Int
-  material   Material @relation("MaterialRequests", fields: [materialId], references: [id])
   quantity   Int
   createdAt  DateTime @default(now())
+  material   Material @relation("MaterialRequests", fields: [materialId], references: [id])
+  request    Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
-  @@unique([requestId, materialId]) // Evita duplicatas de material na mesma requisição
+  @@unique([requestId, materialId])
+  @@index([materialId], map: "RequestItem_materialId_fkey")
 }
 
 model MaterialRequest {
   id         Int      @id @default(autoincrement())
   materialId Int
-  material   Material @relation("MaterialRequests", fields: [materialId], references: [id])
   userId     Int
-  user       User     @relation("UserRequests", fields: [userId], references: [id])
   companyId  Int
-  company    Company  @relation("CompanyRequests", fields: [companyId], references: [id])
   quantity   Int
   status     String   @default("pending")
   createdAt  DateTime @default(now())
+  company    Company  @relation("CompanyRequests", fields: [companyId], references: [id])
+  material   Material @relation("MaterialRequests", fields: [materialId], references: [id])
+  user       User     @relation("UserRequests", fields: [userId], references: [id])
+
+  @@index([companyId], map: "MaterialRequest_companyId_fkey")
+  @@index([materialId], map: "MaterialRequest_materialId_fkey")
+  @@index([userId], map: "MaterialRequest_userId_fkey")
 }
 
 model PasswordReset {
@@ -118,33 +129,31 @@ model PasswordReset {
 }
 
 model Subscription {
-  id                  Int      @id @default(autoincrement())
-  companyId           Int      @unique
-  company             Company  @relation(fields: [companyId], references: [id])
-  stripeSubscriptionId String   @unique
-  email               String?
-  status              String   // "active" ou "inactive"
-  currentPeriodStart  DateTime?
-  currentPeriodEnd    DateTime?
-  updatedAt           DateTime @updatedAt
+  id                   Int       @id @default(autoincrement())
+  companyId            Int       @unique
+  stripeSubscriptionId String    @unique
+  email                String?
+  status               String
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  updatedAt            DateTime  @updatedAt
+  company              Company   @relation(fields: [companyId], references: [id])
 }
-
 
 model Department {
   id        Int      @id @default(autoincrement())
   name      String
   companyId Int
+  createdAt DateTime @default(now())
   company   Company  @relation(fields: [companyId], references: [id])
   users     User[]
-  createdAt DateTime @default(now())
 
-  @@unique([name, companyId]) // Garante que nomes de departamentos sejam únicos por empresa
+  @@unique([name, companyId])
+  @@index([companyId], map: "Department_companyId_fkey")
 }
 
 enum Role {
-  SUPER_ADMIN // Administrador global
-  COMPANY_ADMIN // Administrador da empresa
-  EMPLOYEE // Funcionário
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  EMPLOYEE
 }
-
-

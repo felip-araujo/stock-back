@@ -1,7 +1,7 @@
 import prisma from "../services/prismaClient.js";
 
 export const createMaterial = async (req, res) => {
-  const { name, description, group, companyId } = req.body;
+  const { name, description, group, companyId, codigo } = req.body;
 
   if (!name) {
     res.status(404).json({ message: "Nome do produto é obrigatório" });
@@ -17,6 +17,7 @@ export const createMaterial = async (req, res) => {
         description,
         group,
         companyId,
+        codigo,
       },
     });
 
@@ -94,7 +95,7 @@ export const editarMaterial = async (req, res) => {
   const companyId = req.params.companyId;
   const materialId = req.params.materialId;
 
-  const { name, description, group } = req.body;
+  const { name, description, group, codigo } = req.body;
   try {
     const editarMatComp = await prisma.material.update({
       where: {
@@ -105,6 +106,7 @@ export const editarMaterial = async (req, res) => {
         name,
         description,
         group,
+        codigo,
       },
     });
 

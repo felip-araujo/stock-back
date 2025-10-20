@@ -2,7 +2,7 @@ import { json } from "express";
 import prisma from "../services/prismaClient.js";
 
 export const addProduct = async (req, res) => {
-  const { name, description, price, stock, companyId } = req.body;
+  const { name, description, price, stock, companyId, codigo } = req.body;
   if (!name || !description || !price || !stock || !companyId) {
     return res.status(400).json({
       message:
@@ -17,6 +17,7 @@ export const addProduct = async (req, res) => {
         price,
         stock,
         companyId,
+        codigo,
       },
     });
 
@@ -85,7 +86,7 @@ export const editProd = async (req, res) => {
   const companyId = Number(req.params.companyId);
   const productId = Number(req.params.prodId);
 
-  const { stock, name, description, price } = req.body;
+  const { stock, name, description, price, codigo } = req.body;
 
   if (!companyId) {
     return res.status(400).json({ message: "Id da empresa é obrigatório!" });
@@ -107,6 +108,7 @@ export const editProd = async (req, res) => {
   if (name !== undefined) data.name = name;
   if (description !== undefined) data.description = description;
   if (price !== undefined) data.price = Number(price);
+  if (codigo !== undefined) data.codigo = codigo;
 
   // Verificar se pelo menos um campo foi fornecido
   if (Object.keys(data).length === 0) {
