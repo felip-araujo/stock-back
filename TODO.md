@@ -1,4 +1,2 @@
-- [x] Add webhook handler for 'checkout.session.completed' to save subscription in database when checkout is successful
-- [ ] Test the webhook endpoint to ensure it receives events from Stripe
-- [ ] Verify that subscription is created/updated in the database upon successful payment
-- [ ] Ensure success_url redirects properly (check frontend if needed)
+
+## teste deploy 
