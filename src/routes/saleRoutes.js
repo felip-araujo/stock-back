@@ -11,3 +11,4 @@ router.get("/total/:companyId", authMiddleware, authorize(["COMPANY_ADMIN", "EMP
 router.get("/total/user/:companyId/:userId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), totalSalesValueForUser);
 
 export default router;
+  

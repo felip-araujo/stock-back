@@ -36,3 +36,4 @@ router.post('/webhook', express.raw({ type: 'application/json' }), handleStripeW
 router.get("/status/:companyId", checkSubscription)
 
 export default router;
+ 
