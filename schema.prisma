@@ -137,6 +137,7 @@ model Subscription {
   stripeSubscriptionId String    @unique
   email                String?
   status               String
+  plan                 String    @default("basic")
   currentPeriodStart   DateTime?
   currentPeriodEnd     DateTime?
   updatedAt            DateTime  @updatedAt

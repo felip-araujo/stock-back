@@ -11,7 +11,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const createCompanySubscription = async (req, res) => {
   const { companyId } = req.params;
-  const { priceId, sessionId } = req.body;
+  const { priceId, sessionId, plano } = req.body;
 
   try {
     // 🔹 1. Criação da sessão de checkout
@@ -31,7 +31,10 @@ export const createCompanySubscription = async (req, res) => {
         line_items: [{ price: priceId, quantity: 1 }],
         success_url: `${process.env.FRONTEND_URL}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.FRONTEND_URL}/assinatura/cancelada`,
-        metadata: { companyId: String(companyId) },
+        metadata: { 
+          companyId: String(companyId),
+          plano: plano || "basic" // ✅ salva o plano no metadata
+        },
       });
 
       return res.status(200).json({
@@ -68,6 +71,9 @@ export const createCompanySubscription = async (req, res) => {
       // Evita crash caso a data seja inválida
       const safeDate = (d) => (d instanceof Date && !isNaN(d) ? d : null);
 
+      // ✅ Recupera o plano salvo no metadata da sessão, ou usa o default se não houver
+      const planoFinal = session.metadata?.plano || plano || "basic";
+
       const updatedSubscription = await prisma.subscription.upsert({
         where: { companyId: Number(companyId) },
         update: {
@@ -76,6 +82,7 @@ export const createCompanySubscription = async (req, res) => {
           currentPeriodStart: safeDate(currentPeriodStart),
           currentPeriodEnd: safeDate(currentPeriodEnd),
           email: session.customer_details?.email || null,
+          plan: planoFinal, // ✅ salva o plano corretamente
         },
         create: {
           companyId: Number(companyId),
@@ -84,12 +91,14 @@ export const createCompanySubscription = async (req, res) => {
           currentPeriodStart: safeDate(currentPeriodStart),
           currentPeriodEnd: safeDate(currentPeriodEnd),
           email: session.customer_details?.email || null,
+          plan: planoFinal, // ✅ idem na criação
         },
       });
 
       return res.status(200).json({
         message: "Assinatura confirmada com sucesso",
         status: updatedSubscription.status,
+        plan: updatedSubscription.plan, // ✅ retorna o plano para conferência
       });
     }
 
@@ -103,6 +112,7 @@ export const createCompanySubscription = async (req, res) => {
     });
   }
 };
+
 
 export const cancelCompanySubscription = async (req, res) => {
   const { companyId } = req.params;
@@ -318,7 +328,7 @@ export const checkSubscription = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({data: subscription});
+    res.status(200).json({ data: subscription });
     next();
   } catch (error) {
     console.error("Erro ao verificar assinatura:", error);
