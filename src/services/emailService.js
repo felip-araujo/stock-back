@@ -10,9 +10,9 @@ export const transporter = nodemailer.createTransport({
 
 export const sendRecoveryEmail = async (to, code) => {
   await transporter.sendMail({
-    from: `"Suporte" <${process.env.EMAIL_USER}>`,
+    from: `"no-reply" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "Código de recuperação de senha",
+    subject: `${code}`,
     html: `
       <div style="font-family: Arial, sans-serif; color: #333;">
         <h2>Recuperação de senha</h2>
