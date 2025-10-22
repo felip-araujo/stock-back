@@ -94,7 +94,7 @@ export const getSalesDetail = async (req, res) => {
       include: {
         product: {
           select: {
-            name: true, 
+            name: true,
           },
         },
         user: {
@@ -131,6 +131,7 @@ export const getSalesDetail = async (req, res) => {
 
 export const totalSalesValue = async (req, res) => {
   const companyId = Number(req.params.companyId);
+  
 
   try {
     const total = await prisma.sale.aggregate({
@@ -177,5 +178,47 @@ export const totalSalesValueForUser = async (req, res) => {
   } catch (err) {
     console.error("Erro ao calcular total de vendas:", err);
     res.status(500).json({ message: "Erro ao calcular total de vendas", err });
+  }
+};
+
+export const getSalesDetailForUser = async (req, res) => {
+  const companyId = Number(req.params.companyId);
+  const userId = Number(req.params.userId);
+
+  try {
+    const getSaleDetail = await prisma.sale.findMany({
+      where: {
+        companyId: companyId,
+        userId: userId,
+      },
+      include: {
+        product: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      skip: req.pagination.skip,
+      take: req.pagination.take,
+    });
+
+    const total = await prisma.sale.count({
+      where: {
+        userId: userId,
+      },
+    });
+
+    res.status(200).json({
+      data: getSaleDetail,
+      pagination: {
+        total,
+        page: req.pagination.page,
+        limit: req.pagination.limit,
+        totalPages: Math.ceil(total / req.pagination.limit),
+      },
+    });
+  } catch (err) {
+    res.status(400).json({ message: "Erro ao buscar dados", err });
+    console.error(err);
   }
 };
