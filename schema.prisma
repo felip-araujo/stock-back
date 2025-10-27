@@ -16,6 +16,7 @@ model User {
   password      String
   role          Role              @default(EMPLOYEE)
   companyId     Int
+  inviteId      Int?    
   departmentId  Int?
   createdAt     DateTime          @default(now())
   requests      MaterialRequest[] @relation("UserRequests")
@@ -24,10 +25,27 @@ model User {
   sales         Sale[]
   company       Company           @relation(fields: [companyId], references: [id])
   department    Department?       @relation(fields: [departmentId], references: [id])
+  invite        InviteLink?       @relation("InviteLinkUsers", fields: [inviteId], references: [id])   
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([departmentId], map: "User_departmentId_fkey")
 }
+
+model InviteLink {
+  id          Int      @id @default(autoincrement())
+  token       String   @unique
+  companyId   Int
+  role        Role     @default(EMPLOYEE)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  company     Company  @relation(fields: [companyId], references: [id])
+  invitedUsers User[]  @relation("InviteLinkUsers")
+
+  @@index([companyId])
+}
+
+
 
 model Company {
   id           Int               @id @default(autoincrement())
@@ -45,6 +63,7 @@ model Company {
   sales        Sale[]
   subscription Subscription?
   users        User[]
+  invitelink   InviteLink[]
 }
 
 model Product {

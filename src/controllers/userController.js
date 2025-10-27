@@ -3,25 +3,47 @@ import bcrypt from "bcrypt";
 // import { paginate } from "../middleware/paginate.Middeware.js";
 
 export const createUser = async (req, res) => {
-  try {
-    const { name, email, password, role, companyId, departmentId } = req.body;
+  const { name, email, password, role, companyId, departmentId } = req.body;
 
+  try {
     if (!name || !password || !companyId || !email || !role) {
       return res.status(400).json({
         message: "Nome, senha, id_empresa, email e função são obrigatórios",
       });
     }
 
+    // Busca o plano da empresa
+    const subscription = await prisma.subscription.findFirst({
+      where: { companyId: Number(companyId) },
+    });
+
+    if (!subscription) {
+      return res.status(400).json({
+        message: "Plano da empresa não encontrado",
+      });
+    }
+
+    // Verifica quantos usuários já existem na empresa
+    const userCount = await prisma.user.count({
+      where: { companyId: Number(companyId) },
+    });
+
+    // Se o plano for básico e já tiver 10 usuários, bloqueia o cadastro
+    if (subscription.plan === "basic" && userCount >= 10) {
+      return res.status(403).json({
+        message: "Seu plano atual permite no máximo 10 usuários. Faça upgrade para cadastrar mais.",
+      });
+    }
+
+    // Verifica se o e-mail já existe
     const userExist = await prisma.user.findUnique({
-      where: {
-        email: email,
-      },
+      where: { email },
     });
     if (userExist) {
       return res.status(400).json({ message: "Usuário já existe!" });
     }
 
-    // Verifica se o departamento existe e pertence à empresa
+    // Verifica se o departamento pertence à empresa
     if (departmentId) {
       const department = await prisma.department.findUnique({
         where: { id: Number(departmentId) },
@@ -33,6 +55,7 @@ export const createUser = async (req, res) => {
       }
     }
 
+    // Cria o usuário
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: {
@@ -40,17 +63,24 @@ export const createUser = async (req, res) => {
         email,
         password: hashedPassword,
         role,
-        companyId,
+        companyId: Number(companyId),
         departmentId: departmentId ? Number(departmentId) : null,
       },
     });
-    return res
-      .status(201)
-      .json({ message: "Usuário Criado com Sucesso", user });
+
+    return res.status(201).json({
+      message: "Usuário criado com sucesso",
+      user,
+    });
   } catch (err) {
-    res.status(400).json({ message: err });
+    console.error(err);
+    return res.status(500).json({
+      message: "Erro ao criar usuário",
+      error: err.message,
+    });
   }
 };
+
 
 export const getUsers = async (req, res) => {
   try {

@@ -16,6 +16,9 @@ import webHookRoutes from "./src/routes/webHookRoutes.js";
 import saleRoutes from "./src/routes/saleRoutes.js";
 import contatoRoutes from "./src/routes/contato.Routes.js";
 import cancelRoutes from "./src/routes/cancelRoutes.js";
+import inviteRoutes from "./src/routes/inviteRoutes.js"
+import registerRoutes from "./src/routes/registerRoutes.js"
+
 const app = express();
 
 const swaggerOptions = {
@@ -47,6 +50,9 @@ app.use("/subscription", subscriptionRoutes);
 app.use("/sale", saleRoutes);
 app.use("/contato", contatoRoutes);
 app.use("/cancelar", cancelRoutes);
+app.use("/invite", inviteRoutes)
+app.use("/register", registerRoutes)
+
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
