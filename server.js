@@ -3,7 +3,6 @@ import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocs from "./src/docs/swagger.js";
 
-
 import companiesRoutes from "./src/routes/companiesRoutes.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
@@ -15,8 +14,8 @@ import departmentRoutes from "./src/routes/departmentRoutes.js";
 import subscriptionRoutes from "./src/routes/subscriptionRoutes.js";
 import webHookRoutes from "./src/routes/webHookRoutes.js";
 import saleRoutes from "./src/routes/saleRoutes.js";
-import contatoRoutes from "./src/routes/contato.Routes.js"
-
+import contatoRoutes from "./src/routes/contato.Routes.js";
+import cancelRoutes from "./src/routes/cancelRoutes.js";
 const app = express();
 
 const swaggerOptions = {
@@ -46,7 +45,8 @@ app.use("/material", materialRoutes);
 app.use("/requisicao", requestRoutes);
 app.use("/subscription", subscriptionRoutes);
 app.use("/sale", saleRoutes);
-app.use("/contato", contatoRoutes )
+app.use("/contato", contatoRoutes);
+app.use("/cancelar", cancelRoutes);
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");

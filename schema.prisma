@@ -183,6 +183,16 @@ model Contato {
   criadoEm DateTime @default(now())
 }
 
+model Cancelamento {
+  id               Int      @id @default(autoincrement())
+  userId           Int? // ID do usuário que cancelou (opcional, se você quiser vincular)
+  motivo           String
+  dataCancelamento DateTime @default(now())
+
+  // Relação opcional com o usuário
+  @@index([userId], map: "Request_userId_fkey")
+}
+
 enum Role {
   SUPER_ADMIN
   COMPANY_ADMIN
