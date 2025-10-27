@@ -121,7 +121,17 @@ export const editarMaterial = async (req, res) => {
 
 export const deleteMaterial = async (req, res) => {
   const companyId = req.params.companyId;
-  const materialId = req.params.materialId;
+  const materialId = Number(req.params.materialId);
+
+  const materialRequestExists = await prisma.requestItem.count({
+    where: {
+      materialId: materialId
+    }
+  })
+
+  if (materialRequestExists >= 1) {
+    res.status(400).json({ message: "Não é possível excluir: material em uso." })
+  }
 
   try {
     const deletar = await prisma.material.delete({

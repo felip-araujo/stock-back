@@ -58,7 +58,7 @@ export const getUsers = async (req, res) => {
 
     // busca com paginação
     const users = await prisma.user.findMany({
-      
+
       include: {
         department: true,
       },
@@ -150,23 +150,35 @@ export const updateUsers = async (req, res) => {
 };
 
 export const deleteUsers = async (req, res) => {
-  const id_enviado = req.params.id;
-  const companyId = req.params.companyId;
+  const id_enviado = Number(req.params.id);
+  const companyId = Number(req.params.companyId);
 
   try {
-    const deletar = await prisma.user.delete({
-      where: {
-        companyId: Number(companyId),
-        id: Number(id_enviado),
-      },
-    });
-    if (deletar) {
-      return res.status(200).json({ message: "Usuário deletado com sucesso!" });
-    }
+    await prisma.$transaction([
+      prisma.sale.deleteMany({
+        where: { userId: id_enviado },
+      }),
+      prisma.request.deleteMany({
+        where: { userId: id_enviado },
+      }),
+      prisma.user.delete({
+        where: {
+          id: id_enviado,
+          companyId: companyId,
+        },
+      }),
+    ]);
+
+    return res.status(200).json({ message: "Usuário e dados vinculados deletados com sucesso!" });
   } catch (err) {
-    res.status(400).json(err);
+    console.error(err);
+    return res.status(400).json({
+      message: "Erro ao deletar usuário. Verifique se há vínculos com outras tabelas.",
+      error: err.message,
+    });
   }
 };
+
 
 export const verMeusDados = async (req, res) => {
   const companyId = req.params.companyId;

@@ -21,9 +21,9 @@ model User {
   requests      MaterialRequest[] @relation("UserRequests")
   PasswordReset PasswordReset[]
   newRequests   Request[]         @relation("UserRequests")
+  sales         Sale[]
   company       Company           @relation(fields: [companyId], references: [id])
   department    Department?       @relation(fields: [departmentId], references: [id])
-  sales         Sale[]
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([departmentId], map: "User_departmentId_fkey")
@@ -42,20 +42,20 @@ model Company {
   requests     MaterialRequest[] @relation("CompanyRequests")
   products     Product[]
   newRequests  Request[]         @relation("CompanyRequests")
+  sales        Sale[]
   subscription Subscription?
   users        User[]
-  sales        Sale[]
 }
 
 model Product {
   id          Int      @id @default(autoincrement())
   name        String
   description String?
-  codigo      String?
   price       Float
   stock       Int      @default(0)
   companyId   Int
   createdAt   DateTime @default(now())
+  codigo      String?
   company     Company  @relation(fields: [companyId], references: [id])
   sales       Sale[]
 
@@ -67,9 +67,9 @@ model Material {
   name         String
   description  String?
   group        String?
-  codigo       String?
   companyId    Int
   createdAt    DateTime          @default(now())
+  codigo       String?
   company      Company           @relation(fields: [companyId], references: [id])
   requests     MaterialRequest[] @relation("MaterialRequests")
   requestItems RequestItem[]     @relation("MaterialRequests")
@@ -137,10 +137,10 @@ model Subscription {
   stripeSubscriptionId String    @unique
   email                String?
   status               String
-  plan                 String    @default("basic")
   currentPeriodStart   DateTime?
   currentPeriodEnd     DateTime?
   updatedAt            DateTime  @updatedAt
+  plan                 String    @default("basic")
   company              Company   @relation(fields: [companyId], references: [id])
 }
 
@@ -159,8 +159,8 @@ model Department {
 model Sale {
   id           Int      @id @default(autoincrement())
   productId    Int
-  userId       Int // quem registrou a venda
-  companyId    Int // empresa vinculada à venda
+  userId       Int
+  companyId    Int
   buyerName    String
   buyerCpfCnpj String
   buyerEmail   String?
@@ -168,28 +168,30 @@ model Sale {
   quantity     Int
   totalPrice   Float
   createdAt    DateTime @default(now())
+  company      Company  @relation(fields: [companyId], references: [id])
+  product      Product  @relation(fields: [productId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
 
-  product Product @relation(fields: [productId], references: [id])
-  company Company @relation(fields: [companyId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
+  @@index([companyId], map: "Sale_companyId_fkey")
+  @@index([productId], map: "Sale_productId_fkey")
+  @@index([userId], map: "Sale_userId_fkey")
 }
 
 model Contato {
   id       Int      @id @default(autoincrement())
   nome     String
   email    String
-  telefone String? // opcional
+  telefone String?
   mensagem String
   criadoEm DateTime @default(now())
 }
 
 model Cancelamento {
   id               Int      @id @default(autoincrement())
-  userId           Int? // ID do usuário que cancelou (opcional, se você quiser vincular)
+  userId           Int?
   motivo           String
   dataCancelamento DateTime @default(now())
 
-  // Relação opcional com o usuário
   @@index([userId], map: "Request_userId_fkey")
 }
 

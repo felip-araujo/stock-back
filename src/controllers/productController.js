@@ -157,6 +157,19 @@ export const getOneProdCompany = async (req, res) => {
 export const deleteProd = async (req, res) => {
   const companyId = Number(req.params.companyId);
   const idProduct = Number(req.params.productId);
+
+
+  const saleExists = await prisma.sale.count({
+    where: {
+      productId: idProduct
+    }
+  })
+
+  if (saleExists >= 1) {
+    res.status(400).json({ message: "Não é possível excluir: Existem vendas registradas." })
+  }
+
+
   const companyExists = await prisma.company.findMany({
     where: {
       id: companyId,
