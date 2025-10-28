@@ -113,16 +113,23 @@ export const createCompanySubscription = async (req, res) => {
   }
 };
 
-
 export const cancelCompanySubscription = async (req, res) => {
   const { companyId } = req.params;
 
   try {
     const canceledSubscription = await cancelSubscription(Number(companyId));
 
+    // Stripe retorna cancel_at como timestamp UNIX (em segundos)
+    const cancelDate = canceledSubscription?.cancel_at
+      ? new Date(canceledSubscription.cancel_at * 1000)
+      : null;
+
     res.status(200).json({
-      message: "Assinatura cancelada com sucesso",
+      message: cancelDate
+        ? `Assinatura cancelada com sucesso. Seu acesso permanecerá ativo até ${cancelDate.toLocaleDateString("pt-BR")}.`
+        : "Assinatura cancelada com sucesso.",
       subscription: canceledSubscription,
+      cancelAt: cancelDate,
     });
   } catch (error) {
     console.error("Erro ao cancelar assinatura:", error);
