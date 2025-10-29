@@ -115,7 +115,7 @@ export const createCompanySubscription = async (req, res) => {
 
 export const cancelCompanySubscription = async (req, res) => {
   const { companyId } = req.params;
-
+  
   try {
     const canceledSubscription = await cancelSubscription(Number(companyId));
 
