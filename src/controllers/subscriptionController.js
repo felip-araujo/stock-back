@@ -68,7 +68,7 @@ export const createCompanySubscription = async (req, res) => {
           currentPeriodEnd: safeDate(subscription.current_period_end),
           email: company.rep_email,
           plan: plano || "basic",
-          isTrial: 1
+          isTrial: true
         },
       });
 
