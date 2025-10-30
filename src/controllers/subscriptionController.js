@@ -50,27 +50,39 @@ export const createCompanySubscription = async (req, res) => {
       const safeDate = (d) =>
         d ? new Date(d * 1000) : null;
 
+      const trialEnd = subscription.trial_end
+        ? new Date(subscription.trial_end * 1000)
+        : subscription.current_period_end
+          ? new Date(subscription.current_period_end * 1000)
+          : null;
+
       const createdSub = await prisma.subscription.upsert({
         where: { companyId: Number(companyId) },
         update: {
           stripeSubscriptionId: subscription.id,
           status: subscription.status,
-          currentPeriodStart: safeDate(subscription.current_period_start),
-          currentPeriodEnd: safeDate(subscription.current_period_end),
+          currentPeriodStart: subscription.current_period_start
+            ? new Date(subscription.current_period_start * 1000)
+            : null,
+          currentPeriodEnd: trialEnd, // ✅ usa trial_end se houver
           email: company.rep_email,
           plan: plano || "basic",
+          isTrial: true,
         },
         create: {
           companyId: Number(companyId),
           stripeSubscriptionId: subscription.id,
           status: subscription.status,
-          currentPeriodStart: safeDate(subscription.current_period_start),
-          currentPeriodEnd: safeDate(subscription.current_period_end),
+          currentPeriodStart: subscription.current_period_start
+            ? new Date(subscription.current_period_start * 1000)
+            : null,
+          currentPeriodEnd: trialEnd, // ✅ usa trial_end
           email: company.rep_email,
           plan: plano || "basic",
-          isTrial: true
+          isTrial: true,
         },
       });
+
 
       return res.status(200).json({
         message: "Assinatura trial criada com sucesso",
@@ -167,7 +179,7 @@ export const createCompanySubscription = async (req, res) => {
 
 export const cancelCompanySubscription = async (req, res) => {
   const { companyId } = req.params;
-  
+
   try {
     const canceledSubscription = await cancelSubscription(Number(companyId));
 
@@ -379,6 +391,11 @@ export const checkSubscription = async (req, res, next) => {
     });
 
     console.log(subscription);
+
+    if (subscription.status === "trialing") {
+      res.status(200).json({ data: subscription });
+      next();
+    }
 
     if (!subscription || subscription.status !== "active") {
       return res.status(403).json({
