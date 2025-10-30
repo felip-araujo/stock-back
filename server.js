@@ -18,6 +18,7 @@ import contatoRoutes from "./src/routes/contato.Routes.js";
 import cancelRoutes from "./src/routes/cancelRoutes.js";
 import inviteRoutes from "./src/routes/inviteRoutes.js"
 import registerRoutes from "./src/routes/registerRoutes.js"
+import { verificarTrialsExpirados } from "./src/services/trialService.js";
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use("/cancelar", cancelRoutes);
 app.use("/invite", inviteRoutes)
 app.use("/register", registerRoutes)
 
+verificarTrialsExpirados()
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
