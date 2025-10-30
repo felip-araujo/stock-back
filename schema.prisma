@@ -153,15 +153,19 @@ model PasswordReset {
 model Subscription {
   id                   Int       @id @default(autoincrement())
   companyId            Int       @unique
-  stripeSubscriptionId String    @unique
+  stripeSubscriptionId String?   @unique
   email                String?
   status               String
   currentPeriodStart   DateTime?
   currentPeriodEnd     DateTime?
   updatedAt            DateTime  @updatedAt
   plan                 String    @default("basic")
+  // 🔹 novos campos:
+  isTrial              Boolean   @default(false)
+  trialEndsAt          DateTime?
   company              Company   @relation(fields: [companyId], references: [id])
 }
+
 
 model Department {
   id        Int      @id @default(autoincrement())

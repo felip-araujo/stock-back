@@ -11,19 +11,77 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const createCompanySubscription = async (req, res) => {
   const { companyId } = req.params;
-  const { priceId, sessionId, plano } = req.body;
+  const { priceId, sessionId, plano, trial } = req.body;
 
   try {
-    // 🔹 1. Criação da sessão de checkout
-    if (priceId) {
-      const company = await prisma.company.findUnique({
-        where: { id: Number(companyId) },
+    const company = await prisma.company.findUnique({
+      where: { id: Number(companyId) },
+    });
+
+    if (!company) {
+      return res.status(404).json({ message: "Empresa não encontrada" });
+    }
+
+    // ========================================================
+    // 🔹 1. Caso o usuário queira iniciar o TRIAL (com Stripe)
+    // ========================================================
+    if (trial === true) {
+      // ⚠️ Se não vier priceId, define o do plano Básico por padrão
+      const trialPriceId = priceId || "price_1SAy2LKKzmjTKU738zEEFmhd"; // substitua pelo seu ID real
+
+      // 1️⃣ Cria (ou reutiliza) o cliente no Stripe
+      const customer = await stripe.customers.create({
+        email: company.rep_email,
+        metadata: {
+          companyId: String(companyId),
+          plano: plano || "basic",
+        },
       });
 
-      if (!company) {
-        return res.status(404).json({ message: "Empresa não encontrada" });
-      }
+      // 2️⃣ Cria assinatura com trial ativo
+      const subscription = await stripe.subscriptions.create({
+        customer: customer.id,
+        items: [{ price: trialPriceId }],
+        trial_period_days: 7,
+        metadata: { companyId: String(companyId), plano: plano || "basic" },
+      });
 
+      // 3️⃣ Salva no banco
+      const safeDate = (d) =>
+        d ? new Date(d * 1000) : null;
+
+      const createdSub = await prisma.subscription.upsert({
+        where: { companyId: Number(companyId) },
+        update: {
+          stripeSubscriptionId: subscription.id,
+          status: subscription.status,
+          currentPeriodStart: safeDate(subscription.current_period_start),
+          currentPeriodEnd: safeDate(subscription.current_period_end),
+          email: company.rep_email,
+          plan: plano || "basic",
+        },
+        create: {
+          companyId: Number(companyId),
+          stripeSubscriptionId: subscription.id,
+          status: subscription.status,
+          currentPeriodStart: safeDate(subscription.current_period_start),
+          currentPeriodEnd: safeDate(subscription.current_period_end),
+          email: company.rep_email,
+          plan: plano || "basic",
+        },
+      });
+
+      return res.status(200).json({
+        message: "Assinatura trial criada com sucesso",
+        trialEnd: safeDate(subscription.current_period_end),
+        status: createdSub.status,
+      });
+    }
+
+    // ========================================================
+    // 🔹 2. Caso seja uma assinatura normal (checkout Stripe)
+    // ========================================================
+    if (priceId) {
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         payment_method_types: ["card"],
@@ -31,9 +89,9 @@ export const createCompanySubscription = async (req, res) => {
         line_items: [{ price: priceId, quantity: 1 }],
         success_url: `${process.env.FRONTEND_URL}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.FRONTEND_URL}/assinatura/cancelada`,
-        metadata: { 
+        metadata: {
           companyId: String(companyId),
-          plano: plano || "basic" // ✅ salva o plano no metadata
+          plano: plano || "basic",
         },
       });
 
@@ -44,14 +102,15 @@ export const createCompanySubscription = async (req, res) => {
       });
     }
 
-    // 🔹 2. Confirmação da assinatura (Stripe → Prisma)
+    // ========================================================
+    // 🔹 3. Confirmação da assinatura após checkout
+    // ========================================================
     if (sessionId) {
       const session = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ["subscription"],
       });
 
       const subscription = session.subscription;
-
       if (!subscription) {
         return res.status(404).json({ message: "Assinatura não encontrada" });
       }
@@ -60,18 +119,9 @@ export const createCompanySubscription = async (req, res) => {
         subscription.id
       );
 
-      // Garante que as datas sejam válidas
-      const currentPeriodStart = stripeSubscription.current_period_start
-        ? new Date(stripeSubscription.current_period_start * 1000)
-        : null;
-      const currentPeriodEnd = stripeSubscription.current_period_end
-        ? new Date(stripeSubscription.current_period_end * 1000)
-        : null;
+      const safeDate = (d) =>
+        d ? new Date(d * 1000) : null;
 
-      // Evita crash caso a data seja inválida
-      const safeDate = (d) => (d instanceof Date && !isNaN(d) ? d : null);
-
-      // ✅ Recupera o plano salvo no metadata da sessão, ou usa o default se não houver
       const planoFinal = session.metadata?.plano || plano || "basic";
 
       const updatedSubscription = await prisma.subscription.upsert({
@@ -79,30 +129,29 @@ export const createCompanySubscription = async (req, res) => {
         update: {
           stripeSubscriptionId: stripeSubscription.id,
           status: stripeSubscription.status || "active",
-          currentPeriodStart: safeDate(currentPeriodStart),
-          currentPeriodEnd: safeDate(currentPeriodEnd),
+          currentPeriodStart: safeDate(stripeSubscription.current_period_start),
+          currentPeriodEnd: safeDate(stripeSubscription.current_period_end),
           email: session.customer_details?.email || null,
-          plan: planoFinal, // ✅ salva o plano corretamente
+          plan: planoFinal,
         },
         create: {
           companyId: Number(companyId),
           stripeSubscriptionId: stripeSubscription.id,
           status: stripeSubscription.status || "active",
-          currentPeriodStart: safeDate(currentPeriodStart),
-          currentPeriodEnd: safeDate(currentPeriodEnd),
+          currentPeriodStart: safeDate(stripeSubscription.current_period_start),
+          currentPeriodEnd: safeDate(stripeSubscription.current_period_end),
           email: session.customer_details?.email || null,
-          plan: planoFinal, // ✅ idem na criação
+          plan: planoFinal,
         },
       });
 
       return res.status(200).json({
         message: "Assinatura confirmada com sucesso",
         status: updatedSubscription.status,
-        plan: updatedSubscription.plan, // ✅ retorna o plano para conferência
+        plan: updatedSubscription.plan,
       });
     }
 
-    // 🔹 Caso nenhum parâmetro tenha sido enviado
     return res.status(400).json({ message: "Informe priceId ou sessionId" });
   } catch (error) {
     console.error("Erro ao criar/confirmar assinatura:", error);
@@ -112,6 +161,8 @@ export const createCompanySubscription = async (req, res) => {
     });
   }
 };
+
+
 
 export const cancelCompanySubscription = async (req, res) => {
   const { companyId } = req.params;
@@ -344,4 +395,50 @@ export const checkSubscription = async (req, res, next) => {
       error: error.message,
     });
   }
+
 };
+
+
+
+//Rota para iniciar o Teste de 7 dias /trial/start/:companyId
+export const startTrial = async (req, res) => {
+  const { companyId } = req.params
+  const trialDays = 7
+
+  try {
+    const now = new Date()
+    const trialEndsAt = new Date(now)
+    trialEndsAt.setDate(now.getDate() + trialDays)
+
+    const subscription = await prisma.subscription.upsert({
+      where: { companyId: Number(companyId) },
+      update: {
+        isTrial: true,
+        trialEndsAt,
+        status: "trial_active",
+        currentPeriodStart: now,
+        currentPeriodEnd: trialEndsAt,
+      },
+      create: {
+        companyId: Number(companyId),
+        isTrial: true,
+        trialEndsAt,
+        status: "trial_active",
+        plan: "trial",
+        currentPeriodStart: now,
+        currentPeriodEnd: trialEndsAt,
+      },
+    })
+
+    return res.status(200).json({
+      message: `Período de teste iniciado com sucesso. Válido até ${trialEndsAt.toLocaleDateString("pt-BR")}.`,
+      subscription,
+    })
+  } catch (error) {
+    console.error("Erro ao iniciar trial:", error)
+    res.status(500).json({ message: "Erro ao iniciar trial", error: error.message })
+  }
+}
+
+
+

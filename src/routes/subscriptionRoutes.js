@@ -5,7 +5,8 @@ import {
   createSetupIntent,
   getStripePrices,
   handleStripeWebhook,
-  checkSubscription
+  checkSubscription,
+  startTrial
 } from '../controllers/subscriptionController.js';
 import { authMiddleware } from '../middleware/auth.Middleware.js';
 import { authorize } from '../middleware/authorize.Middleware.js';
@@ -17,6 +18,9 @@ const router = express.Router();
 router.post('/:companyId/subscribe', createCompanySubscription);
 
 router.post('/:companyId', createCompanySubscription)
+
+//Rota para iniciar o teste de 7 dias
+router.post("/trial/start/:companyId", startTrial)
 
 // Cancelar assinatura da empresa
 router.post('/:companyId/cancel', authMiddleware, authorize(['COMPANY_ADMIN']), cancelCompanySubscription);
