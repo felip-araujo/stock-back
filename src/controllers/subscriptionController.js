@@ -442,7 +442,7 @@ export const startTrial = async (req, res) => {
         isTrial: true,
         trialEndsAt,
         status: "trial_active",
-        plan: "trial",
+        plan: "gold",
         currentPeriodStart: now,
         currentPeriodEnd: trialEndsAt,
       },
