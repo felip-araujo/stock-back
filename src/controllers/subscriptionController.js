@@ -27,7 +27,7 @@ export const createCompanySubscription = async (req, res) => {
     // ========================================================
     if (trial === true) {
       // ⚠️ Se não vier priceId, define o do plano Básico por padrão
-      const trialPriceId = priceId || "price_1SAy2LKKzmjTKU738zEEFmhd"; // substitua pelo seu ID real
+      const trialPriceId = priceId || "price_1SJG1MKKzmjTKU73xxqtViUk"; // substitua pelo seu ID real
 
       // 1️⃣ Cria (ou reutiliza) o cliente no Stripe
       const customer = await stripe.customers.create({
