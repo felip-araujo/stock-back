@@ -23,76 +23,69 @@ export const createCompanySubscription = async (req, res) => {
     }
 
     // ========================================================
-    // 🔹 1. Caso o usuário queira iniciar o TRIAL (com Stripe)
+    // 🔹 1. Caso o usuário inicie o TRIAL (Plano GOLD)
     // ========================================================
     if (trial === true) {
-      // ⚠️ Se não vier priceId, define o do plano Básico por padrão
-      const trialPriceId = priceId || "price_1SJG1MKKzmjTKU73xxqtViUk"; // substitua pelo seu ID real
+      // ✅ Define o plano gold como padrão do trial
+      const goldTrialPriceId = priceId || "price_1SJG1MKKzmjTKU73xxqtViUk"; // substitua pelo ID do plano GOLD no Stripe
 
-      // 1️⃣ Cria (ou reutiliza) o cliente no Stripe
+      // ✅ Cria (ou reutiliza) o cliente no Stripe
       const customer = await stripe.customers.create({
         email: company.rep_email,
         metadata: {
           companyId: String(companyId),
-          plano: plano || "basic",
+          plano: "gold",
         },
       });
 
-      // 2️⃣ Cria assinatura com trial ativo
+      // ✅ Cria assinatura com 7 dias de trial
       const subscription = await stripe.subscriptions.create({
         customer: customer.id,
-        items: [{ price: trialPriceId }],
+        items: [{ price: goldTrialPriceId }],
         trial_period_days: 7,
-        metadata: { companyId: String(companyId), plano: plano || "basic" },
+        metadata: { companyId: String(companyId), plano: "gold" },
       });
 
-      // 3️⃣ Salva no banco
-      const safeDate = (d) =>
-        d ? new Date(d * 1000) : null;
-
+      // ✅ Salva assinatura no banco
+      const safeDate = (d) => (d ? new Date(d * 1000) : null);
       const trialEnd = subscription.trial_end
         ? new Date(subscription.trial_end * 1000)
         : subscription.current_period_end
-          ? new Date(subscription.current_period_end * 1000)
-          : null;
+        ? new Date(subscription.current_period_end * 1000)
+        : null;
 
       const createdSub = await prisma.subscription.upsert({
         where: { companyId: Number(companyId) },
         update: {
           stripeSubscriptionId: subscription.id,
           status: subscription.status,
-          currentPeriodStart: subscription.current_period_start
-            ? new Date(subscription.current_period_start * 1000)
-            : null,
-          currentPeriodEnd: trialEnd, // ✅ usa trial_end se houver
+          currentPeriodStart: safeDate(subscription.current_period_start),
+          currentPeriodEnd: trialEnd,
           email: company.rep_email,
-          plan: plano || "basic",
+          plan: "gold", // 👈 plano do trial é sempre gold
           isTrial: true,
         },
         create: {
           companyId: Number(companyId),
           stripeSubscriptionId: subscription.id,
           status: subscription.status,
-          currentPeriodStart: subscription.current_period_start
-            ? new Date(subscription.current_period_start * 1000)
-            : null,
-          currentPeriodEnd: trialEnd, // ✅ usa trial_end
+          currentPeriodStart: safeDate(subscription.current_period_start),
+          currentPeriodEnd: trialEnd,
           email: company.rep_email,
-          plan: plano || "basic",
+          plan: "gold", // 👈 plano do trial é sempre gold
           isTrial: true,
         },
       });
 
-
       return res.status(200).json({
-        message: "Assinatura trial criada com sucesso",
+        message: "Assinatura trial GOLD criada com sucesso",
         trialEnd: safeDate(subscription.current_period_end),
         status: createdSub.status,
       });
     }
 
     // ========================================================
-    // 🔹 2. Caso seja uma assinatura normal (checkout Stripe)
+    // 🔹 2. Assinatura normal (checkout Stripe)
     // ========================================================
     if (priceId) {
       const session = await stripe.checkout.sessions.create({
@@ -104,7 +97,7 @@ export const createCompanySubscription = async (req, res) => {
         cancel_url: `${process.env.FRONTEND_URL}/assinatura/cancelada`,
         metadata: {
           companyId: String(companyId),
-          plano: plano || "basic",
+          plano: plano || "gold", // 👈 padrão agora é gold
         },
       });
 
@@ -132,10 +125,8 @@ export const createCompanySubscription = async (req, res) => {
         subscription.id
       );
 
-      const safeDate = (d) =>
-        d ? new Date(d * 1000) : null;
-
-      const planoFinal = session.metadata?.plano || plano || "basic";
+      const safeDate = (d) => (d ? new Date(d * 1000) : null);
+      const planoFinal = session.metadata?.plano || plano || "gold";
 
       const updatedSubscription = await prisma.subscription.upsert({
         where: { companyId: Number(companyId) },
@@ -146,6 +137,7 @@ export const createCompanySubscription = async (req, res) => {
           currentPeriodEnd: safeDate(stripeSubscription.current_period_end),
           email: session.customer_details?.email || null,
           plan: planoFinal,
+          isTrial: false,
         },
         create: {
           companyId: Number(companyId),
@@ -155,6 +147,7 @@ export const createCompanySubscription = async (req, res) => {
           currentPeriodEnd: safeDate(stripeSubscription.current_period_end),
           email: session.customer_details?.email || null,
           plan: planoFinal,
+          isTrial: false,
         },
       });
 
@@ -174,6 +167,7 @@ export const createCompanySubscription = async (req, res) => {
     });
   }
 };
+
 
 
 
