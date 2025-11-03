@@ -11,9 +11,15 @@ import {
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
 import { paginate } from "../middleware/paginate.Middeware.js";
+import {searchMiddleware} from "../middleware/searchMiddleware.js"
 
 
 const router = express.Router();
+
+
+router.get("/:companyId/search", searchMiddleware)
+
+
 /**
  * @swagger
  * /product:

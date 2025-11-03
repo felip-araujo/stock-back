@@ -10,6 +10,7 @@ import {
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
 import { paginate } from "../middleware/paginate.Middeware.js";
+import {searchMiddleware} from "../middleware/searchMiddleware.js"
 
 const router = express.Router();
 /**
@@ -24,7 +25,7 @@ const router = express.Router();
  */
 router.get("/:companyId", authMiddleware, paginate, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), getUsers);
 router.get("/:companyId/:userId", verMeusDados)
-
+router.get("/busca/:companyId/search", searchMiddleware)
 
 /**
  * @swagger

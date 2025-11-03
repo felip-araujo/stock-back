@@ -22,67 +22,50 @@ export const createCompanySubscription = async (req, res) => {
       return res.status(404).json({ message: "Empresa não encontrada" });
     }
 
-    // ========================================================
-    // 🔹 1. Caso o usuário inicie o TRIAL (Plano GOLD)
-    // ========================================================
-    if (trial === true) {
-      // ✅ Define o plano gold como padrão do trial
-      const goldTrialPriceId = priceId || "price_1SJG1MKKzmjTKU73xxqtViUk"; // substitua pelo ID do plano GOLD no Stripe
+  // ========================================================
+// 🔹 1. Caso o usuário inicie o TRIAL (com cartão cadastrado)
+// ========================================================
+if (trial === true) {
+  // ✅ Define o plano gold como padrão do trial
+  const goldTrialPriceId = priceId || "price_1SJG1MKKzmjTKU73xxqtViUk"; // ID do plano GOLD no Stripe
 
-      // ✅ Cria (ou reutiliza) o cliente no Stripe
-      const customer = await stripe.customers.create({
-        email: company.rep_email,
-        metadata: {
-          companyId: String(companyId),
-          plano: "gold",
-        },
-      });
+  // ✅ Verifica se já existe assinatura ativa ou trial para a empresa
+  const existing = await prisma.subscription.findUnique({
+    where: { companyId: Number(companyId) },
+  });
+  if (existing && existing.status !== "canceled") {
+    return res.status(400).json({ message: "Empresa já possui assinatura ativa ou em teste." });
+  }
 
-      // ✅ Cria assinatura com 7 dias de trial
-      const subscription = await stripe.subscriptions.create({
-        customer: customer.id,
-        items: [{ price: goldTrialPriceId }],
-        trial_period_days: 7,
-        metadata: { companyId: String(companyId), plano: "gold" },
-      });
+  // ✅ Cria sessão de Checkout que coleta o cartão e inicia trial
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    payment_method_types: ["card"],
+    customer_email: company.rep_email,
+    line_items: [{ price: goldTrialPriceId, quantity: 1 }],
+    subscription_data: {
+      trial_period_days: 7,
+      metadata: {
+        companyId: String(companyId),
+        plano: "gold",
+        isTrial: "true",
+      },
+    },
+    metadata: {
+      companyId: String(companyId),
+      plano: "gold",
+    },
+    success_url: `${process.env.FRONTEND_URL}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.FRONTEND_URL}/assinatura/cancelada`,
+  });
 
-      // ✅ Salva assinatura no banco
-      const safeDate = (d) => (d ? new Date(d * 1000) : null);
-      const trialEnd = subscription.trial_end
-        ? new Date(subscription.trial_end * 1000)
-        : subscription.current_period_end
-        ? new Date(subscription.current_period_end * 1000)
-        : null;
+  return res.status(200).json({
+    message: "Sessão de checkout criada com sucesso para o trial",
+    url: session.url,
+    sessionId: session.id,
+  });
+}
 
-      const createdSub = await prisma.subscription.upsert({
-        where: { companyId: Number(companyId) },
-        update: {
-          stripeSubscriptionId: subscription.id,
-          status: subscription.status,
-          currentPeriodStart: safeDate(subscription.current_period_start),
-          currentPeriodEnd: trialEnd,
-          email: company.rep_email,
-          plan: "gold", // 👈 plano do trial é sempre gold
-          isTrial: true,
-        },
-        create: {
-          companyId: Number(companyId),
-          stripeSubscriptionId: subscription.id,
-          status: subscription.status,
-          currentPeriodStart: safeDate(subscription.current_period_start),
-          currentPeriodEnd: trialEnd,
-          email: company.rep_email,
-          plan: "gold", // 👈 plano do trial é sempre gold
-          isTrial: true,
-        },
-      });
-
-      return res.status(200).json({
-        message: "Assinatura trial GOLD criada com sucesso",
-        trialEnd: safeDate(subscription.current_period_end),
-        status: createdSub.status,
-      });
-    }
 
     // ========================================================
     // 🔹 2. Assinatura normal (checkout Stripe)

@@ -36,6 +36,12 @@ Esta API foi desenvolvida para gerenciamento de empresas, usuários e produtos, 
   Authorization: Bearer <seu_token>
 - O token é validado em cada rota protegida.
 - O acesso às rotas varia conforme o tipo de usuário.
+
+**Busca Query**
+- todas as buscas por nome em query podem ser feitas por: 
+**/rota/:companyId/search?q=name**
+- exceto a rota de users que funciona assim: 
+**/user/busca/:companyId/search?q=name**
       `,
     },
     servers: [

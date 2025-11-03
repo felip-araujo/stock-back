@@ -20,7 +20,12 @@ import inviteRoutes from "./src/routes/inviteRoutes.js"
 import registerRoutes from "./src/routes/registerRoutes.js"
 import { verificarTrialsExpirados } from "./src/services/trialService.js";
 
+import {searchMiddleware} from "./src/middleware/searchMiddleware.js"
+
 const app = express();
+
+
+
 
 const swaggerOptions = {
   customCssUrl:
@@ -37,6 +42,17 @@ app.use(cors());
 // Middleware para parsear JSON, mas deixar raw para webhooks
 app.use("/stripe", webHookRoutes);
 app.use(express.json());
+
+
+
+// const searchConfig = {
+//   materiais: { model: "Material", fields: ["nome", "descricao", "categoria"] },
+//   usuarios: { model: "user", fields: ["nome", "email"] },
+//   produtos: { model: "produto", fields: ["nome", "descricao", "codigo"] },
+// };
+
+// app.use(searchMiddleware(searchConfig));
+
 
 app.use("/companies", companiesRoutes);
 app.use("/auth", authRoutes);
@@ -55,6 +71,8 @@ app.use("/invite", inviteRoutes)
 app.use("/register", registerRoutes)
 
 verificarTrialsExpirados()
+
+
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");

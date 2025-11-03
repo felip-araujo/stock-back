@@ -3,9 +3,11 @@ import { addSale, getSalesDetail, getSalesDetailForUser, totalSalesValue, totalS
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
 import { paginate } from "../middleware/paginate.Middeware.js";
+import {searchMiddleware} from "../middleware/searchMiddleware.js"
 const router = express.Router();
 
 router.post("/:companyId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), addSale);
+router.get("/:companyId/search", searchMiddleware)
 router.get("/:companyId", paginate, authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), getSalesDetail);
 router.get("/:companyId/:userId", paginate, authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), getSalesDetailForUser)
 router.get("/total/value/:companyId", authMiddleware, authorize(["COMPANY_ADMIN", "EMPLOYEE"]), totalSalesValue);
