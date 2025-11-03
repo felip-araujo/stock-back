@@ -22,49 +22,49 @@ export const createCompanySubscription = async (req, res) => {
       return res.status(404).json({ message: "Empresa não encontrada" });
     }
 
-  // ========================================================
-// 🔹 1. Caso o usuário inicie o TRIAL (com cartão cadastrado)
-// ========================================================
-if (trial === true) {
-  // ✅ Define o plano gold como padrão do trial
-  const goldTrialPriceId = priceId || "price_1SJG1MKKzmjTKU73xxqtViUk"; // ID do plano GOLD no Stripe
+    // ========================================================
+    // 🔹 1. Caso o usuário inicie o TRIAL (com cartão cadastrado)
+    // ========================================================
+    if (trial === true) {
+      // ✅ Define o plano gold como padrão do trial
+      const goldTrialPriceId = priceId || "price_1SJG1MKKzmjTKU73xxqtViUk"; // ID do plano GOLD no Stripe
 
-  // ✅ Verifica se já existe assinatura ativa ou trial para a empresa
-  const existing = await prisma.subscription.findUnique({
-    where: { companyId: Number(companyId) },
-  });
-  if (existing && existing.status !== "canceled") {
-    return res.status(400).json({ message: "Empresa já possui assinatura ativa ou em teste." });
-  }
+      // ✅ Verifica se já existe assinatura ativa ou trial para a empresa
+      const existing = await prisma.subscription.findUnique({
+        where: { companyId: Number(companyId) },
+      });
+      if (existing && existing.status !== "canceled") {
+        return res.status(400).json({ message: "Empresa já possui assinatura ativa ou em teste." });
+      }
 
-  // ✅ Cria sessão de Checkout que coleta o cartão e inicia trial
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    payment_method_types: ["card"],
-    customer_email: company.rep_email,
-    line_items: [{ price: goldTrialPriceId, quantity: 1 }],
-    subscription_data: {
-      trial_period_days: 7,
-      metadata: {
-        companyId: String(companyId),
-        plano: "gold",
-        isTrial: "true",
-      },
-    },
-    metadata: {
-      companyId: String(companyId),
-      plano: "gold",
-    },
-    success_url: `${process.env.FRONTEND_URL}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.FRONTEND_URL}/assinatura/cancelada`,
-  });
+      // ✅ Cria sessão de Checkout que coleta o cartão e inicia trial
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        payment_method_types: ["card"],
+        customer_email: company.rep_email,
+        line_items: [{ price: goldTrialPriceId, quantity: 1 }],
+        subscription_data: {
+          trial_period_days: 7,
+          metadata: {
+            companyId: String(companyId),
+            plano: "gold",
+            isTrial: "true",
+          },
+        },
+        metadata: {
+          companyId: String(companyId),
+          plano: "gold",
+        },
+        success_url: `${process.env.FRONTEND_URL}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.FRONTEND_URL}/assinatura/cancelada`,
+      });
 
-  return res.status(200).json({
-    message: "Sessão de checkout criada com sucesso para o trial",
-    url: session.url,
-    sessionId: session.id,
-  });
-}
+      return res.status(200).json({
+        message: "Sessão de checkout criada com sucesso para o trial",
+        url: session.url,
+        sessionId: session.id,
+      });
+    }
 
 
     // ========================================================
@@ -104,10 +104,7 @@ if (trial === true) {
         return res.status(404).json({ message: "Assinatura não encontrada" });
       }
 
-      const stripeSubscription = await stripe.subscriptions.retrieve(
-        subscription.id
-      );
-
+      const stripeSubscription = await stripe.subscriptions.retrieve(subscription.id);
       const safeDate = (d) => (d ? new Date(d * 1000) : null);
       const planoFinal = session.metadata?.plano || plano || "gold";
 
@@ -118,9 +115,10 @@ if (trial === true) {
           status: stripeSubscription.status || "active",
           currentPeriodStart: safeDate(stripeSubscription.current_period_start),
           currentPeriodEnd: safeDate(stripeSubscription.current_period_end),
+          trialEndsAt: safeDate(stripeSubscription.trial_end),
           email: session.customer_details?.email || null,
           plan: planoFinal,
-          isTrial: false,
+          isTrial: stripeSubscription.trial_end ? true : false,
         },
         create: {
           companyId: Number(companyId),
@@ -128,9 +126,10 @@ if (trial === true) {
           status: stripeSubscription.status || "active",
           currentPeriodStart: safeDate(stripeSubscription.current_period_start),
           currentPeriodEnd: safeDate(stripeSubscription.current_period_end),
+          trialEndsAt: safeDate(stripeSubscription.trial_end),
           email: session.customer_details?.email || null,
           plan: planoFinal,
-          isTrial: false,
+          isTrial: stripeSubscription.trial_end ? true : false,
         },
       });
 
@@ -140,6 +139,7 @@ if (trial === true) {
         plan: updatedSubscription.plan,
       });
     }
+
 
     return res.status(400).json({ message: "Informe priceId ou sessionId" });
   } catch (error) {
