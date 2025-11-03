@@ -25,7 +25,7 @@ export const createCompanySubscription = async (req, res) => {
     // ========================================================
     // 🔹 1. Caso o usuário inicie o TRIAL (com cartão cadastrado)
     // ========================================================
-    if (trial === true) {
+    if (trial === true || trial === "true") {
       // ✅ Define o plano gold como padrão do trial
       const goldTrialPriceId = priceId || "price_1SJG1MKKzmjTKU73xxqtViUk"; // ID do plano GOLD no Stripe
 
