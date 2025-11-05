@@ -6,7 +6,8 @@ import {
 } from "../services/stripeService.js";
 import prisma from "../services/prismaClient.js";
 import Stripe from "stripe";
-import { transporter } from "../services/emailService.js";
+import { EnviarEmail } from "../services/sendWelcomeMailService.js";
+
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -134,31 +135,11 @@ export const createCompanySubscription = async (req, res) => {
         },
       });
 
-      const email = {
-        from: `"no-reply | Stock Seguro`,
-        to: { email },
-        subject: "Parabéns! Sua assinatura está ativa",
-        html: `
-        <h2>Assinatura confirmada! </h2>
-        <p>Ficamos muito felizes em informar que sua assinatura está ativa, e o seu acesso está em: </p> 
-        <a href="https://www.stockseguro.com.br/auth">Login de Acesso</a>
-        
-        <br>
-        <p>Enviado automaticamente pelo sistema Stock Seguro.</p>
-      `,
-      }
-
-      await transporter.sendMail(email);
-
       return res.status(200).json({
         message: "Assinatura confirmada com sucesso",
         status: updatedSubscription.status,
         plan: updatedSubscription.plan,
       });
-
-
-
-
     }
 
 
@@ -446,10 +427,17 @@ export const startTrial = async (req, res) => {
       },
     })
 
-    return res.status(200).json({
+
+     res.status(200).json({
       message: `Período de teste iniciado com sucesso. Válido até ${trialEndsAt.toLocaleDateString("pt-BR")}.`,
       subscription,
     })
+    const emailUser = subscription.email
+    const fimTeste = trialEndsAt.toLocaleDateString("pt-br")
+    // console.log(emailUser)
+    EnviarEmail(emailUser, fimTeste)
+    return
+
   } catch (error) {
     console.error("Erro ao iniciar trial:", error)
     res.status(500).json({ message: "Erro ao iniciar trial", error: error.message })
