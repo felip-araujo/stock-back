@@ -7,6 +7,7 @@ import {
   getOneProdCompany,
   editProd,
   totalPriceProd,
+  importarProdutos,
 } from "../controllers/productController.js";
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
@@ -31,6 +32,7 @@ router.get("/:companyId/search", searchMiddleware)
  *         description: Cria novo produto no "estoque", precisa estar autenticado como ["COMPANY_ADMIN"]
  */
 router.post("/", authMiddleware, authorize(["COMPANY_ADMIN"]), addProduct);
+router.post("/importar", authMiddleware, authorize(["COMPANY_ADMIN"]), importarProdutos);
 /**
  * @swagger
  * /product:

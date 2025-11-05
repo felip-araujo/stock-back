@@ -29,6 +29,49 @@ export const addProduct = async (req, res) => {
   }
 };
 
+
+export const importarProdutos = async (req, res) => {
+  try {
+    const { produtos, companyId } = req.body;
+
+    if (!Array.isArray(produtos) || produtos.length === 0) {
+      return res.status(400).json({ message: "Nenhum produto recebido." });
+    }
+
+    if (!companyId) {
+      return res.status(400).json({ message: "ID da empresa é obrigatório." });
+    }
+
+    // Garante que companyId é número
+    const company = parseInt(companyId);
+    if (isNaN(company)) {
+      return res.status(400).json({ message: "ID da empresa inválido." });
+    }
+
+    const produtosFormatados = produtos.map((p) => ({
+      name: p.name || "Sem nome",
+      description: p.description || "",
+      codigo: p.codigo || "",
+      price: parseFloat(p.price) || 0,
+      stock: parseInt(p.stock) || 0,
+      companyId: company,
+    }));
+
+    await prisma.product.createMany({
+      data: produtosFormatados,
+      skipDuplicates: true,
+    });
+
+    return res.status(200).json({
+      message: "Importação de produtos concluída com sucesso!",
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erro ao importar produtos.", err });
+  }
+};
+
+
 export const getAllProducts = async (req, res) => {
   try {
     const produtos = await prisma.product.findMany({
