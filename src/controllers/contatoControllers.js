@@ -25,8 +25,8 @@ export const newContact = async (req, res) => {
       port: 465,
       secure: true,
       auth: {
-        user: "SEU_EMAIL@gmail.com",
-        pass: "SUA_SENHA_DE_APP", // use senha de app, não senha real!
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS, // use senha de app, não senha real!
       },
     });
 
