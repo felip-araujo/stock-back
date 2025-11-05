@@ -30,6 +30,48 @@ export const createMaterial = async (req, res) => {
   }
 };
 
+
+export const importarMateriais = async (req, res) => {
+  try {
+    const { materiais } = req.body;
+    const companyId = Number(req.body.companyId)
+
+    if (!companyId) {
+      return res.status(400).json({ message: "Id da empresa é obrigatório." });
+    }
+
+    if (!materiais || !Array.isArray(materiais) || materiais.length === 0) {
+      return res.status(400).json({ message: "Nenhum material enviado." });
+    }
+
+    // Mapeia e garante que cada material terá o companyId vinculado
+    const dadosFormatados = materiais.map((m) => ({
+      name: m.nome || m.name || "Sem nome",
+      description: m.descricao || m.description || "",
+      group: m.grupo || m.group || "",
+      codigo: m.codigo || "",
+      companyId: companyId,
+    }));
+
+    // Insere todos de uma vez
+    const criar = await prisma.material.createMany({
+      data: dadosFormatados,
+      skipDuplicates: true, // evita duplicar se já existir (caso tenha unique no código, por exemplo)
+    });
+
+    return res.status(200).json({
+      message: `${criar.count} materiais importados com sucesso!`,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      message: "Erro ao importar materiais.",
+      error: err.message,
+    });
+  }
+};
+
+
 export const verMaterial = async (req, res) => {
   const companyId = req.params.companyId;
 
