@@ -6,6 +6,7 @@ import {
 } from "../services/stripeService.js";
 import prisma from "../services/prismaClient.js";
 import Stripe from "stripe";
+import { transporter } from "../services/emailService.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -133,11 +134,31 @@ export const createCompanySubscription = async (req, res) => {
         },
       });
 
+      const email = {
+        from: `"no-reply | Stock Seguro`,
+        to: { email },
+        subject: "Parabéns! Sua assinatura está ativa",
+        html: `
+        <h2>Assinatura confirmada! </h2>
+        <p>Ficamos muito felizes em informar que sua assinatura está ativa, e o seu acesso está em: </p> 
+        <a href="https://www.stockseguro.com.br/auth">Login de Acesso</a>
+        
+        <br>
+        <p>Enviado automaticamente pelo sistema Stock Seguro.</p>
+      `,
+      }
+
+      await transporter.sendMail(email);
+
       return res.status(200).json({
         message: "Assinatura confirmada com sucesso",
         status: updatedSubscription.status,
         plan: updatedSubscription.plan,
       });
+
+
+
+
     }
 
 
