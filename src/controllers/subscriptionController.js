@@ -153,7 +153,33 @@ export const createCompanySubscription = async (req, res) => {
   }
 };
 
+export const getAllSubs = async (req, res) => {
 
+  try {
+    const assinaturas = await prisma.subscription.findMany({
+      skip: req.pagination.skip,
+      take: req.pagination.take,
+    }
+    )
+
+    const total = await prisma.subscription.count();
+
+    res.status(200).json({
+      data: assinaturas,
+      pagination: {
+        total,
+        page: req.pagination.page,
+        limit: req.pagination.limit,
+        totalPages: Math.ceil(total / req.pagination.limit),
+      },
+    });
+
+
+  } catch (err) {
+    res.status(400).json({ message: "Erro ao buscar assinaturas", err })
+  }
+
+}
 
 
 export const cancelCompanySubscription = async (req, res) => {
@@ -428,7 +454,7 @@ export const startTrial = async (req, res) => {
     })
 
 
-     res.status(200).json({
+    res.status(200).json({
       message: `Período de teste iniciado com sucesso. Válido até ${trialEndsAt.toLocaleDateString("pt-BR")}.`,
       subscription,
     })

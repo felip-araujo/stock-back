@@ -2,6 +2,55 @@ import prisma from "../services/prismaClient.js";
 import bcrypt from "bcrypt";
 // import { paginate } from "../middleware/paginate.Middeware.js";
 
+
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const todos = await prisma.user.findMany()
+    res.status(200).json(todos)
+  } catch (err) {
+    res.status(400).json({ message: err })
+  }
+}
+
+
+export const createSuperUser = async (req, res) => {
+  const { name, email, role } = req.body
+  const companyId = Number(req.body.companyId)
+  const password = req.body.password
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  const userExist = prisma.user.findUnique({
+    where: {
+      email: email
+    }
+  })
+
+  if (userExist.length >= 1) {
+    res.status(400).json({ message: "Email já cadastrado!" })
+  }
+
+  try {
+
+    createSu = await prisma.user.create({
+      data: {
+        name, email, password:hashedPassword, role, companyId
+      }
+    })
+
+    res.status(200).json({ message: "Super Usuario Criado com Sucesso" })
+
+
+
+  } catch (err) {
+    res.status(400).json({ message: "Erro ao criar Super Usuario", err })
+    console.error(err)
+  }
+
+}
+
+
+
 export const createUser = async (req, res) => {
   const { name, email, password, role, companyId, departmentId } = req.body;
 
@@ -208,6 +257,41 @@ export const deleteUsers = async (req, res) => {
     });
   }
 };
+
+
+export const deleteUsersForId = async (req, res) => {
+  const id_enviado = Number(req.params.id);
+
+
+  try {
+    await prisma.$transaction([
+      prisma.sale.deleteMany({
+        where: { userId: id_enviado },
+      }),
+      prisma.request.deleteMany({
+        where: { userId: id_enviado },
+      }),
+      prisma.user.delete({
+        where: {
+          id: id_enviado
+        },
+      }),
+    ]);
+
+    return res.status(200).json({ message: "Usuário e dados vinculados deletados com sucesso!" });
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({
+      message: "Erro ao deletar usuário. Verifique se há vínculos com outras tabelas.",
+      error: err.message,
+    });
+  }
+};
+
+
+
+
+
 
 
 export const verMeusDados = async (req, res) => {

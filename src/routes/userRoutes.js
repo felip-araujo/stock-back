@@ -1,8 +1,11 @@
 import express from "express";
 import {
   alterarSenha,
+  createSuperUser,
   createUser,
   deleteUsers,
+  deleteUsersForId,
+  getAllUsers,
   getUsers,
   updateUsers,
   verMeusDados,
@@ -10,7 +13,7 @@ import {
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
 import { paginate } from "../middleware/paginate.Middeware.js";
-import {searchMiddleware} from "../middleware/searchMiddleware.js"
+import { searchMiddleware } from "../middleware/searchMiddleware.js"
 
 const router = express.Router();
 /**
@@ -23,9 +26,14 @@ const router = express.Router();
  *       200:
  *         description: Retorna todos os usuários, precisa estar autenticado como ["SUPER_ADMIN"]
  */
+
+router.get("/", getAllUsers)
 router.get("/:companyId", authMiddleware, paginate, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), getUsers);
 router.get("/:companyId/:userId", verMeusDados)
 router.get("/busca/:companyId/search", searchMiddleware)
+
+router.post("/su", createSuperUser)
+
 
 /**
  * @swagger
@@ -49,8 +57,9 @@ router.post("/", authMiddleware, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), cr
  *         description: Deleta usuários, precisa passaro o ID do usuario via params, precisa estar autenticado como ("SUPER_ADMIN")
  */
 router.delete("/:companyId/:id", authMiddleware, authorize(["SUPER_ADMIN", "COMPANY_ADMIN"]), deleteUsers);
+router.delete("/:id", deleteUsersForId)
 
-router.put("/:companyId/:id", authMiddleware,  authorize(["SUPER_ADMIN", "COMPANY_ADMIN", "EMPLOYEE"]),  updateUsers)
+router.put("/:companyId/:id", authMiddleware, authorize(["SUPER_ADMIN", "COMPANY_ADMIN", "EMPLOYEE"]), updateUsers)
 router.put("/alterar-senha/:companyId/:id", alterarSenha)
 
 export default router;

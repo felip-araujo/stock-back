@@ -16,36 +16,35 @@ model User {
   password      String
   role          Role              @default(EMPLOYEE)
   companyId     Int
-  inviteId      Int?    
+  inviteId      Int?
   departmentId  Int?
   createdAt     DateTime          @default(now())
   requests      MaterialRequest[] @relation("UserRequests")
   PasswordReset PasswordReset[]
   newRequests   Request[]         @relation("UserRequests")
   sales         Sale[]
-  company       Company           @relation(fields: [companyId], references: [id])
-  department    Department?       @relation(fields: [departmentId], references: [id])
-  invite        InviteLink?       @relation("InviteLinkUsers", fields: [inviteId], references: [id])   
+  company       Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  department    Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  invite        InviteLink?       @relation("InviteLinkUsers", fields: [inviteId], references: [id], onDelete: SetNull)
+  cancelamentos   Cancelamento[]   @relation("UserCancelamentos")
 
-  @@index([companyId], map: "User_companyId_fkey")
-  @@index([departmentId], map: "User_departmentId_fkey")
+  @@index([companyId])
+  @@index([departmentId])
 }
 
 model InviteLink {
-  id          Int      @id @default(autoincrement())
-  token       String   @unique
-  companyId   Int
-  role        Role     @default(EMPLOYEE)
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  token        String   @unique
+  companyId    Int
+  role         Role     @default(EMPLOYEE)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
 
-  company     Company  @relation(fields: [companyId], references: [id])
-  invitedUsers User[]  @relation("InviteLinkUsers")
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invitedUsers User[]   @relation("InviteLinkUsers")
 
   @@index([companyId])
 }
-
-
 
 model Company {
   id           Int               @id @default(autoincrement())
@@ -75,10 +74,10 @@ model Product {
   companyId   Int
   createdAt   DateTime @default(now())
   codigo      String?
-  company     Company  @relation(fields: [companyId], references: [id])
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   sales       Sale[]
 
-  @@index([companyId], map: "Product_companyId_fkey")
+  @@index([companyId])
 }
 
 model Material {
@@ -89,11 +88,11 @@ model Material {
   companyId    Int
   createdAt    DateTime          @default(now())
   codigo       String?
-  company      Company           @relation(fields: [companyId], references: [id])
+  company      Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
   requests     MaterialRequest[] @relation("MaterialRequests")
   requestItems RequestItem[]     @relation("MaterialRequests")
 
-  @@index([companyId], map: "Material_companyId_fkey")
+  @@index([companyId])
 }
 
 model Request {
@@ -102,12 +101,12 @@ model Request {
   companyId Int
   status    String        @default("pending")
   createdAt DateTime      @default(now())
-  company   Company       @relation("CompanyRequests", fields: [companyId], references: [id])
-  user      User          @relation("UserRequests", fields: [userId], references: [id])
+  company   Company       @relation("CompanyRequests", fields: [companyId], references: [id], onDelete: Cascade)
+  user      User          @relation("UserRequests", fields: [userId], references: [id], onDelete: Cascade)
   items     RequestItem[]
 
-  @@index([companyId], map: "Request_companyId_fkey")
-  @@index([userId], map: "Request_userId_fkey")
+  @@index([companyId])
+  @@index([userId])
 }
 
 model RequestItem {
@@ -116,11 +115,11 @@ model RequestItem {
   materialId Int
   quantity   Int
   createdAt  DateTime @default(now())
-  material   Material @relation("MaterialRequests", fields: [materialId], references: [id])
+  material   Material @relation("MaterialRequests", fields: [materialId], references: [id], onDelete: Cascade)
   request    Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   @@unique([requestId, materialId])
-  @@index([materialId], map: "RequestItem_materialId_fkey")
+  @@index([materialId])
 }
 
 model MaterialRequest {
@@ -131,13 +130,13 @@ model MaterialRequest {
   quantity   Int
   status     String   @default("pending")
   createdAt  DateTime @default(now())
-  company    Company  @relation("CompanyRequests", fields: [companyId], references: [id])
-  material   Material @relation("MaterialRequests", fields: [materialId], references: [id])
-  user       User     @relation("UserRequests", fields: [userId], references: [id])
+  company    Company  @relation("CompanyRequests", fields: [companyId], references: [id], onDelete: Cascade)
+  material   Material @relation("MaterialRequests", fields: [materialId], references: [id], onDelete: Cascade)
+  user       User     @relation("UserRequests", fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([companyId], map: "MaterialRequest_companyId_fkey")
-  @@index([materialId], map: "MaterialRequest_materialId_fkey")
-  @@index([userId], map: "MaterialRequest_userId_fkey")
+  @@index([companyId])
+  @@index([materialId])
+  @@index([userId])
 }
 
 model PasswordReset {
@@ -145,7 +144,7 @@ model PasswordReset {
   userId    Int
   code      String
   expiresAt DateTime
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -160,23 +159,21 @@ model Subscription {
   currentPeriodEnd     DateTime?
   updatedAt            DateTime  @updatedAt
   plan                 String    @default("basic")
-  // 🔹 novos campos:
   isTrial              Boolean   @default(false)
   trialEndsAt          DateTime?
-  company              Company   @relation(fields: [companyId], references: [id])
+  company              Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
-
 
 model Department {
   id        Int      @id @default(autoincrement())
   name      String
   companyId Int
   createdAt DateTime @default(now())
-  company   Company  @relation(fields: [companyId], references: [id])
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   users     User[]
 
   @@unique([name, companyId])
-  @@index([companyId], map: "Department_companyId_fkey")
+  @@index([companyId])
 }
 
 model Sale {
@@ -191,13 +188,13 @@ model Sale {
   quantity     Int
   totalPrice   Float
   createdAt    DateTime @default(now())
-  company      Company  @relation(fields: [companyId], references: [id])
-  product      Product  @relation(fields: [productId], references: [id])
-  user         User     @relation(fields: [userId], references: [id])
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([companyId], map: "Sale_companyId_fkey")
-  @@index([productId], map: "Sale_productId_fkey")
-  @@index([userId], map: "Sale_userId_fkey")
+  @@index([companyId])
+  @@index([productId])
+  @@index([userId])
 }
 
 model Contato {
@@ -214,9 +211,30 @@ model Cancelamento {
   userId           Int?
   motivo           String
   dataCancelamento DateTime @default(now())
+  user             User?    @relation("UserCancelamentos", fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId], map: "Request_userId_fkey")
+  @@index([userId])
 }
+
+
+model AnalyticsEvent {
+  id          Int      @id @default(autoincrement())
+  event       String
+  page        String
+  element     String?      // usado apenas para eventos de clique
+  duration    Int?         // usado apenas quando o evento for "leave"
+  timestamp   DateTime     @default(now())
+  ipAddress   String?
+  userAgent   String?
+}
+
+model AnalyticsClick {
+  id        Int      @id @default(autoincrement())
+  buttonId  String
+  page      String?
+  createdAt DateTime @default(now())
+}
+
 
 enum Role {
   SUPER_ADMIN

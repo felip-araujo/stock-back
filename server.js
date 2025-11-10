@@ -19,6 +19,9 @@ import cancelRoutes from "./src/routes/cancelRoutes.js";
 import inviteRoutes from "./src/routes/inviteRoutes.js"
 import registerRoutes from "./src/routes/registerRoutes.js"
 import { verificarTrialsExpirados } from "./src/services/trialService.js";
+import analyticsRoutes from "./src/routes/analyticsRoutes.js"
+import analiticStats from "./src/routes/superStatsRoutes.js"
+
 
 import {searchMiddleware} from "./src/middleware/searchMiddleware.js"
 
@@ -69,6 +72,8 @@ app.use("/contato", contatoRoutes);
 app.use("/cancelar", cancelRoutes);
 app.use("/invite", inviteRoutes)
 app.use("/register", registerRoutes)
+app.use("/analytics", analyticsRoutes )
+app.use("/analytics/stats", analiticStats )
 
 verificarTrialsExpirados()
 

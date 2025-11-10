@@ -7,6 +7,7 @@ import {
 } from "../controllers/companiesControllers.js";
 import { authMiddleware } from "../middleware/auth.Middleware.js";
 import { authorize } from "../middleware/authorize.Middleware.js";
+import { paginate } from "../middleware/paginate.Middeware.js";
 
 const router = express.Router();
 /**
@@ -19,7 +20,7 @@ const router = express.Router();
  *       200:
  *         description: Retorna todas as empresas cadastradas, precisa estar autenticado como ["SUPER_ADMIN"]
  */
-router.get("/",  getCompany);
+router.get("/", authMiddleware, paginate, authorize(["COMPANY_ADMIN", "SUPER_ADMIN"]), getCompany);
 /**
  * @swagger
  * /companies/name:

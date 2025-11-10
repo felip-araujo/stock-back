@@ -3,17 +3,31 @@ import bcrypt from "bcrypt";
 
 export const getCompany = async (req, res) => {
   const companyName = req.params.name;
+  
 
   try {
-    const company = await prisma.company.findMany({
+    const companies = await prisma.company.findMany({
       where: {
         name: companyName,
       },
+      skip: req.pagination.skip,
+      take: req.pagination.take,
     });
-    if (!company || company.length === 0) {
+    if (!companies || companies.length === 0) {
       res.status(404).json({ message: "Nenhuma empresa encontrada." });
     } else {
-      res.json(company);
+
+    const total = await prisma.company.count();
+
+    res.status(200).json({
+      data: companies,
+      pagination: {
+        total,
+        page: req.pagination.page,
+        limit: req.pagination.limit,
+        totalPages: Math.ceil(total / req.pagination.limit),
+      },
+    });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });

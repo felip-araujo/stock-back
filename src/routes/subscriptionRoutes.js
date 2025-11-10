@@ -6,13 +6,17 @@ import {
   getStripePrices,
   handleStripeWebhook,
   checkSubscription,
-  startTrial
+  startTrial,
+  getAllSubs
 } from '../controllers/subscriptionController.js';
 import { authMiddleware } from '../middleware/auth.Middleware.js';
 import { authorize } from '../middleware/authorize.Middleware.js';
+import { paginate } from '../middleware/paginate.Middeware.js';
 
 
 const router = express.Router();
+
+router.get("/", authMiddleware, paginate, authorize(["SUPER_ADMIN"]), getAllSubs);
 
 // Criar assinatura para empresa
 router.post('/:companyId/subscribe', createCompanySubscription);
@@ -40,4 +44,3 @@ router.post('/webhook', express.raw({ type: 'application/json' }), handleStripeW
 router.get("/status/:companyId", checkSubscription)
 
 export default router;
- 
