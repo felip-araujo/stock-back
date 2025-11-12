@@ -138,46 +138,85 @@ export const verRequisicoes = async (req, res) => {
 export const verRequisicaoPorUsuario = async (req, res) => {
   const companyId = req.params.companyId;
   const idUsuario = req.params.idUsuario;
+  const search = req.query.search?.trim();
 
-  if (!idUsuario || idUsuario === null) {
-    res.status(400).json({ message: "Id do usuário nao fornecido" });
+  if (!idUsuario) {
+    return res.status(400).json({ message: "Id do usuário não fornecido" });
   }
-  if (!companyId || companyId === null) {
-    res.status(400).json({ message: "companyId não fornecido" });
+  if (!companyId) {
+    return res.status(400).json({ message: "companyId não fornecido" });
   }
 
   try {
+    const whereClause = {
+      userId: Number(idUsuario),
+      companyId: Number(companyId),
+    };
+
+    // 🔍 Se houver termo de busca, adiciona OR para procurar em usuário, departamento ou material
+    if (search && search.length > 0) {
+      whereClause.OR = [
+        {
+          user: {
+            name: {
+              contains: search,
+              // Prisma 6.16.3 — usar equals insensível a maiúsculas/minúsculas via regex-like
+              mode: undefined, // removido para compatibilidade
+            },
+          },
+        },
+        {
+          user: {
+            department: {
+              name: {
+                contains: search,
+              },
+            },
+          },
+        },
+        {
+          items: {
+            some: {
+              material: {
+                name: {
+                  contains: search,
+                },
+              },
+            },
+          },
+        },
+      ];
+    }
+
     const reqsById = await prisma.request.findMany({
-      where: {
-        userId: Number(idUsuario),
-        companyId: Number(companyId),
-      },
+      where: whereClause,
       include: {
         items: {
           include: {
             material: true,
           },
         },
-        user: true,
+        user: {
+          include: {
+            department: true,
+          },
+        },
       },
       skip: req.pagination.skip,
       take: req.pagination.take,
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
     const total = await prisma.request.count({
-      where: {
-        userId: Number(idUsuario),
-        companyId: Number(companyId),
-      },
+      where: whereClause,
     });
 
     if (reqsById.length === 0) {
-      res
-        .status(404)
-        .json({ message: "Nenhuma requisição encontrada para o usuario" });
+      return res.status(404).json({
+        message: "Nenhuma requisição encontrada para o usuário",
+      });
     }
 
     res.status(200).json({
@@ -194,6 +233,7 @@ export const verRequisicaoPorUsuario = async (req, res) => {
     res.status(400).json({ message: "Erro ao buscar requisições" });
   }
 };
+
 
 export const excludeRequisicoes = async (req, res) => {
   const companyId = req.params.companyId;

@@ -73,34 +73,51 @@ export const importarMateriais = async (req, res) => {
 
 
 export const verMaterial = async (req, res) => {
-  const companyId = req.params.companyId;
+  const companyId = Number(req.params.companyId);
+  const search = req.query.search ? req.query.search.toLowerCase() : "";
 
   if (!companyId) {
-    res.status(404).json({ message: "companyId é obrigatório." });
+    return res.status(400).json({ message: "companyId é obrigatório." });
   }
 
   try {
-    const verMaterialComp = await prisma.material.findMany({
-      where: {
-        companyId: Number(companyId),
-      },
+    const where = {
+      companyId,
+      ...(search && {
+        OR: [
+          {
+            name: {
+              contains: search,
+            },
+          },
+          {
+            name: {
+              contains: search.charAt(0).toUpperCase() + search.slice(1),
+            },
+          },
+        ],
+      }),
+    };
+
+    const materiais = await prisma.material.findMany({
+      where,
       skip: req.pagination.skip,
       take: req.pagination.take,
+      orderBy: {
+        name: "asc",
+      },
     });
 
-    const total = await prisma.material.count();
+    const total = await prisma.material.count({ where });
 
-    if (
-      verMaterialComp === null ||
-      !verMaterialComp ||
-      verMaterialComp.length === 0
-    ) {
-      res
-        .status(400)
-        .json({ message: "Não existem materiais cadastrados para a empresa." });
+    if (!materiais || materiais.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Nenhum material encontrado para a empresa." });
     }
+
     res.status(200).json({
-      data: verMaterialComp,
+      data: materiais,
       pagination: {
         total,
         page: req.pagination.page,
@@ -109,10 +126,15 @@ export const verMaterial = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(400).json({ message: "Erro ao buscar maateriais", err });
-    console.error(err);
+    console.error("Erro ao buscar materiais:", err);
+    res.status(500).json({
+      message: "Erro ao buscar materiais",
+      error: err.message,
+    });
   }
 };
+
+
 
 export const verMaterialUnico = async (req, res) => {
   const companyId = req.params.companyId;
