@@ -64,13 +64,18 @@ export const verRequisicoes = async (req, res) => {
         companyId: Number(companyId),
       },
       include: {
-        user: true,
+        user: {
+          include: {
+            department: true, 
+          },
+        },
         items: {
           include: {
             material: true,
           },
         },
       },
+
       skip: req.pagination.skip,
       take: req.pagination.take,
       orderBy: {

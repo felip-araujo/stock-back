@@ -10,27 +10,42 @@ datasource db {
 }
 
 model User {
-  id            Int               @id @default(autoincrement())
-  name          String
-  email         String            @unique
-  password      String
-  role          Role              @default(EMPLOYEE)
-  companyId     Int
-  inviteId      Int?
-  departmentId  Int?
-  createdAt     DateTime          @default(now())
-  requests      MaterialRequest[] @relation("UserRequests")
-  PasswordReset PasswordReset[]
-  newRequests   Request[]         @relation("UserRequests")
-  sales         Sale[]
-  company       Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  department    Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  invite        InviteLink?       @relation("InviteLinkUsers", fields: [inviteId], references: [id], onDelete: SetNull)
-  cancelamentos   Cancelamento[]   @relation("UserCancelamentos")
+  id             Int               @id @default(autoincrement())
+  name           String
+  email          String            @unique
+  password       String
+  role           Role              @default(EMPLOYEE)
+  companyId      Int
+  inviteId       Int?
+  departmentId   Int?
+  createdAt      DateTime          @default(now())
+  requests       MaterialRequest[] @relation("UserRequests")
+  PasswordReset  PasswordReset[]
+  newRequests    Request[]         @relation("UserRequests")
+  sales          Sale[]
+  company        Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  department     Department?       @relation("DepartmentToUsers", fields: [departmentId], references: [id], onDelete: SetNull)
+  invite         InviteLink?       @relation("InviteLinkUsers", fields: [inviteId], references: [id], onDelete: SetNull)
+  cancelamentos  Cancelamento[]    @relation("UserCancelamentos")
 
   @@index([companyId])
   @@index([departmentId])
 }
+
+model Department {
+  id        Int      @id @default(autoincrement())
+  name      String
+  companyId Int
+  createdAt DateTime @default(now())
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users     User[]   @relation("DepartmentToUsers")
+
+  @@unique([name, companyId])
+  @@index([companyId])
+}
+
+
+
 
 model InviteLink {
   id           Int      @id @default(autoincrement())
@@ -164,17 +179,6 @@ model Subscription {
   company              Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
-model Department {
-  id        Int      @id @default(autoincrement())
-  name      String
-  companyId Int
-  createdAt DateTime @default(now())
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  users     User[]
-
-  @@unique([name, companyId])
-  @@index([companyId])
-}
 
 model Sale {
   id           Int      @id @default(autoincrement())

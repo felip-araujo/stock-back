@@ -34,7 +34,7 @@ export const createSuperUser = async (req, res) => {
 
     createSu = await prisma.user.create({
       data: {
-        name, email, password:hashedPassword, role, companyId
+        name, email, password: hashedPassword, role, companyId
       }
     })
 
@@ -139,8 +139,9 @@ export const getUsers = async (req, res) => {
     const users = await prisma.user.findMany({
 
       include: {
-        department: true,
+        department: true
       },
+      
       where: { companyId },
       skip: req.pagination.skip,
       take: req.pagination.take,
