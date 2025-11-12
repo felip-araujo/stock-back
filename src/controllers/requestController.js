@@ -56,17 +56,50 @@ export const criarRequisicao = async (req, res) => {
 };
 
 export const verRequisicoes = async (req, res) => {
-  const companyId = req.params.companyId;
+  const companyId = Number(req.params.companyId);
+  const search = req.query.search?.trim() || "";
 
   try {
+    const where = { companyId };
+
+    if (search) {
+      where.OR = [
+        {
+          user: {
+            name: {
+              contains: search,
+            },
+          },
+        },
+        {
+          user: {
+            department: {
+              name: {
+                contains: search,
+              },
+            },
+          },
+        },
+        {
+          items: {
+            some: {
+              material: {
+                name: {
+                  contains: search,
+                },
+              },
+            },
+          },
+        },
+      ];
+    }
+
     const verRequisicoes = await prisma.request.findMany({
-      where: {
-        companyId: Number(companyId),
-      },
+      where,
       include: {
         user: {
           include: {
-            department: true, 
+            department: true,
           },
         },
         items: {
@@ -75,18 +108,15 @@ export const verRequisicoes = async (req, res) => {
           },
         },
       },
-
       skip: req.pagination.skip,
       take: req.pagination.take,
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
     const total = await prisma.request.count({
-      where: {
-        companyId: Number(companyId),
-      },
+      where,
     });
 
     res.status(200).json({
@@ -99,10 +129,11 @@ export const verRequisicoes = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(400).json({ message: "Erro ao buscar requisições" });
     console.error(err);
+    res.status(400).json({ message: "Erro ao buscar requisições" });
   }
 };
+
 
 export const verRequisicaoPorUsuario = async (req, res) => {
   const companyId = req.params.companyId;
