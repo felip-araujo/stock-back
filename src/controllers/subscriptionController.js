@@ -267,6 +267,11 @@ export const getStripePrices = async (req, res) => {
 };
 
 export const handleStripeWebhook = async (req, res) => {
+
+  console.log("✅ Webhook Stripe recebido:", req.headers["stripe-signature"]);
+  console.log("🔹 Body recebido:", req.body); // Isso vai mostrar o conteúdo bruto do evento
+
+
   const sig = req.headers["stripe-signature"];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
