@@ -266,172 +266,172 @@ export const getStripePrices = async (req, res) => {
   }
 };
 
-export const handleStripeWebhook = async (req, res) => {
-  console.log("✅ Webhook Stripe recebido:", req.headers["stripe-signature"]);
+// export const handleStripeWebhook = async (req, res) => {
+//   console.log("✅ Webhook Stripe recebido:", req.headers["stripe-signature"]);
 
-  const sig = req.headers["stripe-signature"];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+//   const sig = req.headers["stripe-signature"];
+//   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  let event;
+//   let event;
 
-  try {
-    // ⚠️ req.body deve ser o RAW body (middleware já configurado na rota)
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err) {
-    console.log("❌ Webhook signature verification failed:", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
+//   try {
+//     // ⚠️ req.body deve ser o RAW body (middleware já configurado na rota)
+//     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+//   } catch (err) {
+//     console.log("❌ Webhook signature verification failed:", err.message);
+//     return res.status(400).send(`Webhook Error: ${err.message}`);
+//   }
 
-  try {
-    switch (event.type) {
-      // =====================================================
-      // ✅ Pagamento bem-sucedido
-      // =====================================================
-      case "invoice.payment_succeeded": {
-        const invoice = event.data.object;
-        console.log("💰 Pagamento bem-sucedido:", invoice.id);
-        break;
-      }
+//   try {
+//     switch (event.type) {
+//       // =====================================================
+//       // ✅ Pagamento bem-sucedido
+//       // =====================================================
+//       case "invoice.payment_succeeded": {
+//         const invoice = event.data.object;
+//         console.log("💰 Pagamento bem-sucedido:", invoice.id);
+//         break;
+//       }
 
-      // =====================================================
-      // ❌ Pagamento falhou
-      // =====================================================
-      case "invoice.payment_failed": {
-        const failedInvoice = event.data.object;
-        console.log("⚠️ Pagamento falhou:", failedInvoice.id);
-        break;
-      }
+//       // =====================================================
+//       // ❌ Pagamento falhou
+//       // =====================================================
+//       case "invoice.payment_failed": {
+//         const failedInvoice = event.data.object;
+//         console.log("⚠️ Pagamento falhou:", failedInvoice.id);
+//         break;
+//       }
 
-      // =====================================================
-      // 🔁 Atualização de assinatura
-      // =====================================================
-      case "customer.subscription.updated": {
-        const s = event.data.object;
+//       // =====================================================
+//       // 🔁 Atualização de assinatura
+//       // =====================================================
+//       case "customer.subscription.updated": {
+//         const s = event.data.object;
 
-        await prisma.subscription.updateMany({
-          where: { stripeSubscriptionId: s.id },
-          data: {
-            status: s.status,
-            currentPeriodStart: s.current_period_start ? new Date(s.current_period_start * 1000) : null,
-            currentPeriodEnd: s.current_period_end ? new Date(s.current_period_end * 1000) : null,
-            trialEndsAt: s.trial_end ? new Date(s.trial_end * 1000) : null,
-            isTrial: s.status === "trialing",
-            updatedAt: new Date(),
-          },
-        });
+//         await prisma.subscription.updateMany({
+//           where: { stripeSubscriptionId: s.id },
+//           data: {
+//             status: s.status,
+//             currentPeriodStart: s.current_period_start ? new Date(s.current_period_start * 1000) : null,
+//             currentPeriodEnd: s.current_period_end ? new Date(s.current_period_end * 1000) : null,
+//             trialEndsAt: s.trial_end ? new Date(s.trial_end * 1000) : null,
+//             isTrial: s.status === "trialing",
+//             updatedAt: new Date(),
+//           },
+//         });
 
-        console.log("🔄 Assinatura atualizada:", s.id);
-        break;
-      }
+//         console.log("🔄 Assinatura atualizada:", s.id);
+//         break;
+//       }
 
-      // =====================================================
-      // 🛒 Checkout concluído
-      // =====================================================
-      case "checkout.session.completed": {
-        const session = event.data.object;
-        const companyId = Number(session.metadata?.companyId);
-        console.log("✅ Checkout concluído para empresa:", companyId);
+//       // =====================================================
+//       // 🛒 Checkout concluído
+//       // =====================================================
+//       case "checkout.session.completed": {
+//         const session = event.data.object;
+//         const companyId = Number(session.metadata?.companyId);
+//         console.log("✅ Checkout concluído para empresa:", companyId);
 
-        if (!companyId) {
-          console.log("⚠️ Nenhum companyId encontrado na metadata");
-          break;
-        }
+//         if (!companyId) {
+//           console.log("⚠️ Nenhum companyId encontrado na metadata");
+//           break;
+//         }
 
-        // ⚙️ Faz chamada interna para confirmar assinatura (reutiliza lógica do createCompanySubscription)
-        try {
-          const backendUrl = `${process.env.BACKEND_URL}/subscription/${companyId}`;
-          const response = await fetch(backendUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: session.id }),
-          });
+//         // ⚙️ Faz chamada interna para confirmar assinatura (reutiliza lógica do createCompanySubscription)
+//         try {
+//           const backendUrl = `${process.env.BACKEND_URL}/subscription/${companyId}`;
+//           const response = await fetch(backendUrl, {
+//             method: "POST",
+//             headers: { "Content-Type": "application/json" },
+//             body: JSON.stringify({ sessionId: session.id }),
+//           });
 
-          const result = await response.json();
-          console.log("🔁 Assinatura confirmada via webhook:", result);
-        } catch (err) {
-          console.error("❌ Erro ao confirmar assinatura via webhook:", err.message);
-        }
+//           const result = await response.json();
+//           console.log("🔁 Assinatura confirmada via webhook:", result);
+//         } catch (err) {
+//           console.error("❌ Erro ao confirmar assinatura via webhook:", err.message);
+//         }
 
-        break;
-      }
+//         break;
+//       }
 
-      // =====================================================
-      // ❌ Assinatura cancelada
-      // =====================================================
-      case "customer.subscription.deleted": {
-        const canceled = event.data.object;
-        await prisma.subscription.updateMany({
-          where: { stripeSubscriptionId: canceled.id },
-          data: {
-            status: "canceled",
-            updatedAt: new Date(),
-          },
-        });
-        console.log("❌ Assinatura cancelada:", canceled.id);
-        break;
-      }
+//       // =====================================================
+//       // ❌ Assinatura cancelada
+//       // =====================================================
+//       case "customer.subscription.deleted": {
+//         const canceled = event.data.object;
+//         await prisma.subscription.updateMany({
+//           where: { stripeSubscriptionId: canceled.id },
+//           data: {
+//             status: "canceled",
+//             updatedAt: new Date(),
+//           },
+//         });
+//         console.log("❌ Assinatura cancelada:", canceled.id);
+//         break;
+//       }
 
-      // =====================================================
-      // 🆕 Nova assinatura criada (trial ou normal)
-      // =====================================================
-      case "customer.subscription.created": {
-        const s = event.data.object;
+//       // =====================================================
+//       // 🆕 Nova assinatura criada (trial ou normal)
+//       // =====================================================
+//       case "customer.subscription.created": {
+//         const s = event.data.object;
 
-        const currentPeriodStart = s.current_period_start
-          ? new Date(s.current_period_start * 1000)
-          : null;
+//         const currentPeriodStart = s.current_period_start
+//           ? new Date(s.current_period_start * 1000)
+//           : null;
 
-        const currentPeriodEnd = s.current_period_end
-          ? new Date(s.current_period_end * 1000)
-          : null;
+//         const currentPeriodEnd = s.current_period_end
+//           ? new Date(s.current_period_end * 1000)
+//           : null;
 
-        const trialEndsAt = s.trial_end
-          ? new Date(s.trial_end * 1000)
-          : null;
+//         const trialEndsAt = s.trial_end
+//           ? new Date(s.trial_end * 1000)
+//           : null;
 
-        const companyId = Number(s.metadata?.companyId) || null;
+//         const companyId = Number(s.metadata?.companyId) || null;
 
-        await prisma.subscription.upsert({
-          where: { stripeSubscriptionId: s.id },
-          update: {
-            status: s.status,
-            currentPeriodStart,
-            currentPeriodEnd,
-            trialEndsAt,
-            plan: s.items?.data?.[0]?.price?.nickname || "gold",
-            updatedAt: new Date(),
-          },
-          create: {
-            stripeSubscriptionId: s.id,
-            status: s.status,
-            currentPeriodStart,
-            currentPeriodEnd,
-            trialEndsAt,
-            plan: s.items?.data?.[0]?.price?.nickname || "gold",
-            companyId,
-            isTrial: s.status === "trialing",
-            email: s.customer_email || null,
-          },
-        });
+//         await prisma.subscription.upsert({
+//           where: { stripeSubscriptionId: s.id },
+//           update: {
+//             status: s.status,
+//             currentPeriodStart,
+//             currentPeriodEnd,
+//             trialEndsAt,
+//             plan: s.items?.data?.[0]?.price?.nickname || "gold",
+//             updatedAt: new Date(),
+//           },
+//           create: {
+//             stripeSubscriptionId: s.id,
+//             status: s.status,
+//             currentPeriodStart,
+//             currentPeriodEnd,
+//             trialEndsAt,
+//             plan: s.items?.data?.[0]?.price?.nickname || "gold",
+//             companyId,
+//             isTrial: s.status === "trialing",
+//             email: s.customer_email || null,
+//           },
+//         });
 
-        console.log(`🟢 Assinatura criada no Stripe (${s.status}) para empresa: ${companyId}`);
-        break;
-      }
+//         console.log(`🟢 Assinatura criada no Stripe (${s.status}) para empresa: ${companyId}`);
+//         break;
+//       }
 
-      // =====================================================
-      // 🔹 Outros eventos não tratados
-      // =====================================================
-      default:
-        console.log(`⚪ Evento não tratado: ${event.type}`);
-        break;
-    }
+//       // =====================================================
+//       // 🔹 Outros eventos não tratados
+//       // =====================================================
+//       default:
+//         console.log(`⚪ Evento não tratado: ${event.type}`);
+//         break;
+//     }
 
-    res.json({ received: true });
-  } catch (error) {
-    console.error("❌ Erro ao processar webhook:", error);
-    res.status(500).json({ error: "Erro interno ao processar webhook", details: error.message });
-  }
-};
+//     res.json({ received: true });
+//   } catch (error) {
+//     console.error("❌ Erro ao processar webhook:", error);
+//     res.status(500).json({ error: "Erro interno ao processar webhook", details: error.message });
+//   }
+// };
 
 
 // GET /subscription/status/:companyId
