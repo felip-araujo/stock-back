@@ -294,22 +294,23 @@ export const handleStripeWebhook = async (req, res) => {
         break;
 
       case "customer.subscription.updated":
-        // Assinatura atualizada
         const updatedSubscription = event.data.object;
+
         await prisma.subscription.updateMany({
           where: { stripeSubscriptionId: updatedSubscription.id },
           data: {
             status: updatedSubscription.status,
-            currentPeriodStart: new Date(
-              updatedSubscription.current_period_start * 1000
-            ),
-            currentPeriodEnd: new Date(
-              updatedSubscription.current_period_end * 1000
-            ),
+            currentPeriodStart: new Date(updatedSubscription.current_period_start * 1000),
+            currentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
+            trialEndsAt: updatedSubscription.trial_end
+              ? new Date(updatedSubscription.trial_end * 1000)
+              : null,
+            isTrial: updatedSubscription.trial_end ? true : false,
             updatedAt: new Date(),
           },
         });
         break;
+
 
       case "checkout.session.completed":
         // Checkout concluído com sucesso
@@ -328,26 +329,27 @@ export const handleStripeWebhook = async (req, res) => {
             update: {
               stripeSubscriptionId: stripeSubscription.id,
               status: stripeSubscription.status,
-              currentPeriodStart: new Date(
-                stripeSubscription.current_period_start * 1000
-              ),
-              currentPeriodEnd: new Date(
-                stripeSubscription.current_period_end * 1000
-              ),
+              currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+              currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+              trialEndsAt: stripeSubscription.trial_end
+                ? new Date(stripeSubscription.trial_end * 1000)
+                : null,
+              isTrial: stripeSubscription.trial_end ? true : false,
               updatedAt: new Date(),
             },
             create: {
               stripeSubscriptionId: stripeSubscription.id,
               status: stripeSubscription.status,
-              currentPeriodStart: new Date(
-                stripeSubscription.current_period_start * 1000
-              ),
-              currentPeriodEnd: new Date(
-                stripeSubscription.current_period_end * 1000
-              ),
+              currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+              currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+              trialEndsAt: stripeSubscription.trial_end
+                ? new Date(stripeSubscription.trial_end * 1000)
+                : null,
+              isTrial: stripeSubscription.trial_end ? true : false,
               companyId: Number(companyId),
             },
           });
+
 
           console.log(
             "Assinatura criada/atualizada com sucesso para empresa:",
