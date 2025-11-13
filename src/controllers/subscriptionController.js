@@ -29,7 +29,7 @@ export const createCompanySubscription = async (req, res) => {
     // ========================================================
     if (trial === true || trial === "true") {
       // ✅ Define o plano gold como padrão do trial
-      const goldTrialPriceId = priceId || "price_1SJG1MKKzmjTKU73xxqtViUk"; // ID do plano GOLD no Stripe
+      const goldTrialPriceId = priceId || "price_1SAy2LKKzmjTKU738zEEFmhd"; // ID do plano GOLD no Stripe
 
       // ✅ Verifica se já existe assinatura ativa ou trial para a empresa
       const existing = await prisma.subscription.findUnique({
