@@ -27,7 +27,7 @@ router.post('/:companyId', createCompanySubscription)
 router.post("/trial/start/:companyId", startTrial)
 
 // Cancelar assinatura da empresa
-router.post('/:companyId/cancel', authMiddleware, authorize(['COMPANY_ADMIN', 'SUPER_ADMIN']), cancelCompanySubscription);
+router.post('/:companyId/cancel', authMiddleware, authorize(['COMPANY_ADMIN'], ['SUPER_ADMIN']), cancelCompanySubscription);
 
 // Buscar status da assinatura da empresa
 // router.get('/:companyId/status', authMiddleware, authorize(['COMPANY_ADMIN']), getCompanySubscription);
