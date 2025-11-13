@@ -267,10 +267,7 @@ export const getStripePrices = async (req, res) => {
 };
 
 export const handleStripeWebhook = async (req, res) => {
-
   console.log("✅ Webhook Stripe recebido:", req.headers["stripe-signature"]);
-  console.log("🔹 Body recebido:", req.body); // Isso vai mostrar o conteúdo bruto do evento
-
 
   const sig = req.headers["stripe-signature"];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -278,147 +275,184 @@ export const handleStripeWebhook = async (req, res) => {
   let event;
 
   try {
+    // ⚠️ req.body deve ser o RAW body (middleware já configurado na rota)
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
   } catch (err) {
-    console.log(`Webhook signature verification failed.`, err.message);
+    console.log("❌ Webhook signature verification failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   try {
     switch (event.type) {
-      case "invoice.payment_succeeded":
-        // Pagamento bem-sucedido
+      // =====================================================
+      // ✅ Pagamento bem-sucedido
+      // =====================================================
+      case "invoice.payment_succeeded": {
         const invoice = event.data.object;
-        console.log("Pagamento bem-sucedido:", invoice.id);
+        console.log("💰 Pagamento bem-sucedido:", invoice.id);
         break;
+      }
 
-      case "invoice.payment_failed":
-        // Pagamento falhou
+      // =====================================================
+      // ❌ Pagamento falhou
+      // =====================================================
+      case "invoice.payment_failed": {
         const failedInvoice = event.data.object;
-        console.log("Pagamento falhou:", failedInvoice.id);
+        console.log("⚠️ Pagamento falhou:", failedInvoice.id);
         break;
+      }
 
-      case "customer.subscription.updated":
-        const updatedSubscription = event.data.object;
+      // =====================================================
+      // 🔁 Atualização de assinatura
+      // =====================================================
+      case "customer.subscription.updated": {
+        const s = event.data.object;
 
         await prisma.subscription.updateMany({
-          where: { stripeSubscriptionId: updatedSubscription.id },
+          where: { stripeSubscriptionId: s.id },
           data: {
-            status: updatedSubscription.status,
-            currentPeriodStart: new Date(updatedSubscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
-            trialEndsAt: updatedSubscription.trial_end
-              ? new Date(updatedSubscription.trial_end * 1000)
-              : null,
-            isTrial: updatedSubscription.trial_end ? true : false,
+            status: s.status,
+            currentPeriodStart: s.current_period_start ? new Date(s.current_period_start * 1000) : null,
+            currentPeriodEnd: s.current_period_end ? new Date(s.current_period_end * 1000) : null,
+            trialEndsAt: s.trial_end ? new Date(s.trial_end * 1000) : null,
+            isTrial: s.status === "trialing",
             updatedAt: new Date(),
           },
         });
+
+        console.log("🔄 Assinatura atualizada:", s.id);
         break;
+      }
 
-
-      case "checkout.session.completed":
-        // Checkout concluído com sucesso
+      // =====================================================
+      // 🛒 Checkout concluído
+      // =====================================================
+      case "checkout.session.completed": {
         const session = event.data.object;
-        const companyId = session.metadata.companyId;
+        const companyId = Number(session.metadata?.companyId);
+        console.log("✅ Checkout concluído para empresa:", companyId);
 
         if (session.mode === "subscription" && session.subscription) {
-          // Buscar a assinatura no Stripe para obter detalhes
-          const stripeSubscription = await stripe.subscriptions.retrieve(
-            session.subscription
-          );
+          const stripeSubscription = await stripe.subscriptions.retrieve(session.subscription);
 
-          // Salvar ou atualizar a assinatura no banco de dados
+          const currentPeriodStart = stripeSubscription.current_period_start
+            ? new Date(stripeSubscription.current_period_start * 1000)
+            : null;
+
+          const currentPeriodEnd = stripeSubscription.current_period_end
+            ? new Date(stripeSubscription.current_period_end * 1000)
+            : null;
+
+          const trialEndsAt = stripeSubscription.trial_end
+            ? new Date(stripeSubscription.trial_end * 1000)
+            : null;
+
           await prisma.subscription.upsert({
-            where: { companyId: Number(companyId) },
+            where: { companyId },
             update: {
               stripeSubscriptionId: stripeSubscription.id,
               status: stripeSubscription.status,
-              currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-              currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
-              trialEndsAt: stripeSubscription.trial_end
-                ? new Date(stripeSubscription.trial_end * 1000)
-                : null,
-              isTrial: stripeSubscription.trial_end ? true : false,
+              currentPeriodStart,
+              currentPeriodEnd,
+              trialEndsAt,
+              isTrial: stripeSubscription.status === "trialing",
               updatedAt: new Date(),
             },
             create: {
               stripeSubscriptionId: stripeSubscription.id,
               status: stripeSubscription.status,
-              currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-              currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
-              trialEndsAt: stripeSubscription.trial_end
-                ? new Date(stripeSubscription.trial_end * 1000)
-                : null,
-              isTrial: stripeSubscription.trial_end ? true : false,
-              companyId: Number(companyId),
+              currentPeriodStart,
+              currentPeriodEnd,
+              trialEndsAt,
+              isTrial: stripeSubscription.status === "trialing",
+              companyId,
             },
           });
 
-
-          console.log(
-            "Assinatura criada/atualizada com sucesso para empresa:",
-            companyId
-          );
+          console.log("🟢 Assinatura registrada/atualizada via checkout:", stripeSubscription.id);
         }
-        break;
 
-      case "customer.subscription.deleted":
-        // Assinatura cancelada
-        const canceledSubscription = event.data.object;
+        break;
+      }
+
+      // =====================================================
+      // ❌ Assinatura cancelada
+      // =====================================================
+      case "customer.subscription.deleted": {
+        const canceled = event.data.object;
         await prisma.subscription.updateMany({
-          where: { stripeSubscriptionId: canceledSubscription.id },
+          where: { stripeSubscriptionId: canceled.id },
           data: {
             status: "canceled",
             updatedAt: new Date(),
           },
         });
+        console.log("❌ Assinatura cancelada:", canceled.id);
         break;
+      }
 
-      case "customer.subscription.created":
-        const newSubscription = event.data.object;
+      // =====================================================
+      // 🆕 Nova assinatura criada (trial ou normal)
+      // =====================================================
+      case "customer.subscription.created": {
+        const s = event.data.object;
+
+        const currentPeriodStart = s.current_period_start
+          ? new Date(s.current_period_start * 1000)
+          : null;
+
+        const currentPeriodEnd = s.current_period_end
+          ? new Date(s.current_period_end * 1000)
+          : null;
+
+        const trialEndsAt = s.trial_end
+          ? new Date(s.trial_end * 1000)
+          : null;
+
+        const companyId = Number(s.metadata?.companyId) || null;
 
         await prisma.subscription.upsert({
-          where: { stripeSubscriptionId: newSubscription.id },
+          where: { stripeSubscriptionId: s.id },
           update: {
-            status: newSubscription.status,
-            currentPeriodStart: new Date(newSubscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(newSubscription.current_period_end * 1000),
-            trialEndsAt: newSubscription.trial_end
-              ? new Date(newSubscription.trial_end * 1000)
-              : null,
-            plan: newSubscription.items?.data?.[0]?.price?.nickname || "gold",
+            status: s.status,
+            currentPeriodStart,
+            currentPeriodEnd,
+            trialEndsAt,
+            plan: s.items?.data?.[0]?.price?.nickname || "gold",
             updatedAt: new Date(),
           },
           create: {
-            stripeSubscriptionId: newSubscription.id,
-            status: newSubscription.status,
-            currentPeriodStart: new Date(newSubscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(newSubscription.current_period_end * 1000),
-            trialEndsAt: newSubscription.trial_end
-              ? new Date(newSubscription.trial_end * 1000)
-              : null,
-            plan: newSubscription.items?.data?.[0]?.price?.nickname || "gold",
-            companyId: Number(newSubscription.metadata?.companyId),
-            isTrial: !!newSubscription.trial_end,
-            email: newSubscription.customer_email || null,
+            stripeSubscriptionId: s.id,
+            status: s.status,
+            currentPeriodStart,
+            currentPeriodEnd,
+            trialEndsAt,
+            plan: s.items?.data?.[0]?.price?.nickname || "gold",
+            companyId,
+            isTrial: s.status === "trialing",
+            email: s.customer_email || null,
           },
         });
 
-        console.log("🟢 Nova assinatura (trial ou normal) registrada:", newSubscription.id);
+        console.log(`🟢 Assinatura criada no Stripe (${s.status}) para empresa: ${companyId}`);
         break;
+      }
 
-
+      // =====================================================
+      // 🔹 Outros eventos não tratados
+      // =====================================================
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        console.log(`⚪ Evento não tratado: ${event.type}`);
+        break;
     }
 
     res.json({ received: true });
   } catch (error) {
-    console.error("Erro ao processar webhook:", error);
-    res.status(500).json({ error: "Erro interno do servidor" });
+    console.error("❌ Erro ao processar webhook:", error);
+    res.status(500).json({ error: "Erro interno ao processar webhook", details: error.message });
   }
 };
+
 
 // GET /subscription/status/:companyId
 export const checkSubscription = async (req, res, next) => {
