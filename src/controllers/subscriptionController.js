@@ -394,7 +394,7 @@ export const handleStripeWebhook = async (req, res) => {
             currentPeriodStart,
             currentPeriodEnd,
             trialEndsAt,
-            plan: fullSub.items?.data?.[0]?.price?.nickname || "gold",
+            plan: fullSub.items?.data?.[0]?.price?.nickname || "basic",
             updatedAt: new Date(),
           },
           create: {
@@ -403,7 +403,7 @@ export const handleStripeWebhook = async (req, res) => {
             currentPeriodStart,
             currentPeriodEnd,
             trialEndsAt,
-            plan: fullSub.items?.data?.[0]?.price?.nickname || "gold",
+            plan: fullSub.items?.data?.[0]?.price?.nickname || "basic",
             companyId,
             isTrial: fullSub.status === "trialing",
             email: fullSub.customer_email || null,
