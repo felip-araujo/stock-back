@@ -13,7 +13,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const createCompanySubscription = async (req, res) => {
   const { companyId } = req.params;
-  const { priceId, sessionId, plano, trial } = req.body;
+  const { priceId, plano, trial } = req.body;
 
   try {
     const company = await prisma.company.findUnique({
@@ -28,18 +28,16 @@ export const createCompanySubscription = async (req, res) => {
     // 🔹 1. Caso o usuário inicie o TRIAL (com cartão cadastrado)
     // ========================================================
     if (trial === true || trial === "true") {
-      // ✅ Define o plano gold como padrão do trial
-      const goldTrialPriceId = priceId || "price_1SJG1MKKzmjTKU73xxqtViUk"; // ID do plano GOLD no Stripe
+      const goldTrialPriceId = priceId || "price_1SJG1MKKzmjTKU73xxqtViUk";
 
-      // ✅ Verifica se já existe assinatura ativa ou trial para a empresa
       const existing = await prisma.subscription.findUnique({
         where: { companyId: Number(companyId) },
       });
+
       if (existing && existing.status !== "canceled") {
         return res.status(400).json({ message: "Empresa já possui assinatura ativa ou em teste." });
       }
 
-      // ✅ Cria sessão de Checkout que coleta o cartão e inicia trial
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         payment_method_types: ["card"],
@@ -57,20 +55,18 @@ export const createCompanySubscription = async (req, res) => {
           companyId: String(companyId),
           plano: "gold",
         },
-        success_url: `${process.env.FRONTEND_URL}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${process.env.FRONTEND_URL}/assinatura/sucesso?status=trialing`,
         cancel_url: `${process.env.FRONTEND_URL}/assinatura/cancelada`,
       });
 
       return res.status(200).json({
         message: "Sessão de checkout criada com sucesso para o trial",
         url: session.url,
-        sessionId: session.id,
       });
     }
 
-
     // ========================================================
-    // 🔹 2. Assinatura normal (checkout Stripe)
+    // 🔹 2. Assinatura normal (sem trial)
     // ========================================================
     if (priceId) {
       const session = await stripe.checkout.sessions.create({
@@ -78,80 +74,30 @@ export const createCompanySubscription = async (req, res) => {
         payment_method_types: ["card"],
         customer_email: company.rep_email,
         line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${process.env.FRONTEND_URL}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.FRONTEND_URL}/assinatura/cancelada`,
         metadata: {
           companyId: String(companyId),
-          plano: plano || "gold", // 👈 padrão agora é gold
+          plano: plano || "gold",
         },
+        success_url: `${process.env.FRONTEND_URL}/assinatura/sucesso?status=active`,
+        cancel_url: `${process.env.FRONTEND_URL}/assinatura/cancelada`,
       });
 
       return res.status(200).json({
         message: "Sessão de checkout criada com sucesso",
         url: session.url,
-        sessionId: session.id,
       });
     }
 
-    // ========================================================
-    // 🔹 3. Confirmação da assinatura após checkout
-    // ========================================================
-    if (sessionId) {
-      const session = await stripe.checkout.sessions.retrieve(sessionId, {
-        expand: ["subscription"],
-      });
-
-      const subscription = session.subscription;
-      if (!subscription) {
-        return res.status(404).json({ message: "Assinatura não encontrada" });
-      }
-
-      const stripeSubscription = await stripe.subscriptions.retrieve(subscription.id);
-      const safeDate = (d) => (d ? new Date(d * 1000) : null);
-      const planoFinal = session.metadata?.plano || plano || "gold";
-
-      const updatedSubscription = await prisma.subscription.upsert({
-        where: { companyId: Number(companyId) },
-        update: {
-          stripeSubscriptionId: stripeSubscription.id,
-          status: stripeSubscription.status || "active",
-          currentPeriodStart: safeDate(stripeSubscription.current_period_start),
-          currentPeriodEnd: safeDate(stripeSubscription.current_period_end),
-          trialEndsAt: safeDate(stripeSubscription.trial_end),
-          email: session.customer_details?.email || null,
-          plan: planoFinal,
-          isTrial: stripeSubscription.trial_end ? true : false,
-        },
-        create: {
-          companyId: Number(companyId),
-          stripeSubscriptionId: stripeSubscription.id,
-          status: stripeSubscription.status || "active",
-          currentPeriodStart: safeDate(stripeSubscription.current_period_start),
-          currentPeriodEnd: safeDate(stripeSubscription.current_period_end),
-          trialEndsAt: safeDate(stripeSubscription.trial_end),
-          email: session.customer_details?.email || null,
-          plan: planoFinal,
-          isTrial: stripeSubscription.trial_end ? true : false,
-        },
-      });
-
-      return res.status(200).json({
-        message: "Assinatura confirmada com sucesso",
-        status: updatedSubscription.status,
-        plan: updatedSubscription.plan,
-      });
-    }
-
-
-    return res.status(400).json({ message: "Informe priceId ou sessionId" });
+    return res.status(400).json({ message: "Informe priceId ou trial" });
   } catch (error) {
-    console.error("Erro ao criar/confirmar assinatura:", error);
+    console.error("Erro ao criar assinatura:", error);
     res.status(500).json({
-      message: "Erro ao criar/confirmar assinatura",
+      message: "Erro ao criar assinatura",
       error: error.message,
     });
   }
 };
+
 
 export const getAllSubs = async (req, res) => {
 
