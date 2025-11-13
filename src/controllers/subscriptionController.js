@@ -375,6 +375,40 @@ export const handleStripeWebhook = async (req, res) => {
         });
         break;
 
+      case "customer.subscription.created":
+        const newSubscription = event.data.object;
+
+        await prisma.subscription.upsert({
+          where: { stripeSubscriptionId: newSubscription.id },
+          update: {
+            status: newSubscription.status,
+            currentPeriodStart: new Date(newSubscription.current_period_start * 1000),
+            currentPeriodEnd: new Date(newSubscription.current_period_end * 1000),
+            trialEndsAt: newSubscription.trial_end
+              ? new Date(newSubscription.trial_end * 1000)
+              : null,
+            plan: newSubscription.items?.data?.[0]?.price?.nickname || "gold",
+            updatedAt: new Date(),
+          },
+          create: {
+            stripeSubscriptionId: newSubscription.id,
+            status: newSubscription.status,
+            currentPeriodStart: new Date(newSubscription.current_period_start * 1000),
+            currentPeriodEnd: new Date(newSubscription.current_period_end * 1000),
+            trialEndsAt: newSubscription.trial_end
+              ? new Date(newSubscription.trial_end * 1000)
+              : null,
+            plan: newSubscription.items?.data?.[0]?.price?.nickname || "gold",
+            companyId: Number(newSubscription.metadata?.companyId),
+            isTrial: !!newSubscription.trial_end,
+            email: newSubscription.customer_email || null,
+          },
+        });
+
+        console.log("🟢 Nova assinatura (trial ou normal) registrada:", newSubscription.id);
+        break;
+
+
       default:
         console.log(`Unhandled event type ${event.type}`);
     }
