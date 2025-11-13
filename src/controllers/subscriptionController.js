@@ -49,13 +49,13 @@ export const createCompanySubscription = async (req, res) => {
           trial_period_days: 7,
           metadata: {
             companyId: String(companyId),
-            plano: "gold",
+            plano: "basic",
             isTrial: "true",
           },
         },
         metadata: {
           companyId: String(companyId),
-          plano: "gold",
+          plano: "basic",
         },
         success_url: `${process.env.FRONTEND_URL}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.FRONTEND_URL}/assinatura/cancelada`,
