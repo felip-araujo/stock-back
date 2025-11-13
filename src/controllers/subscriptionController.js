@@ -315,7 +315,7 @@ export const handleStripeWebhook = async (req, res) => {
             currentPeriodStart: s.current_period_start ? new Date(s.current_period_start * 1000) : null,
             currentPeriodEnd: s.current_period_end ? new Date(s.current_period_end * 1000) : null,
             trialEndsAt: s.trial_end ? new Date(s.trial_end * 1000) : null,
-            isTrial: s.status === "trialing",
+            isTrial: s.status === "trial",
             updatedAt: new Date(),
           },
         });
@@ -376,47 +376,50 @@ export const handleStripeWebhook = async (req, res) => {
       // =====================================================
       case "customer.subscription.created": {
         const s = event.data.object;
-
-        const currentPeriodStart = s.current_period_start
-          ? new Date(s.current_period_start * 1000)
-          : null;
-
-        const currentPeriodEnd = s.current_period_end
-          ? new Date(s.current_period_end * 1000)
-          : null;
-
-        const trialEndsAt = s.trial_end
-          ? new Date(s.trial_end * 1000)
-          : null;
-
         const companyId = Number(s.metadata?.companyId) || null;
+
+        // ✅ Busca detalhes completos da assinatura (pois o evento pode vir incompleto)
+        const fullSub = await stripe.subscriptions.retrieve(s.id);
+
+        const safeDate = (d) => (d ? new Date(d * 1000) : null);
+
+        const currentPeriodStart = safeDate(fullSub.current_period_start);
+        const currentPeriodEnd = safeDate(fullSub.current_period_end);
+        const trialEndsAt = safeDate(fullSub.trial_end);
 
         await prisma.subscription.upsert({
           where: { stripeSubscriptionId: s.id },
           update: {
-            status: s.status,
+            status: fullSub.status,
             currentPeriodStart,
             currentPeriodEnd,
             trialEndsAt,
-            plan: s.items?.data?.[0]?.price?.nickname || "gold",
+            plan: fullSub.items?.data?.[0]?.price?.nickname || "gold",
             updatedAt: new Date(),
           },
           create: {
             stripeSubscriptionId: s.id,
-            status: s.status,
+            status: fullSub.status,
             currentPeriodStart,
             currentPeriodEnd,
             trialEndsAt,
-            plan: s.items?.data?.[0]?.price?.nickname || "gold",
+            plan: fullSub.items?.data?.[0]?.price?.nickname || "gold",
             companyId,
-            isTrial: s.status === "trialing",
-            email: s.customer_email || null,
+            isTrial: fullSub.status === "trialing",
+            email: fullSub.customer_email || null,
           },
         });
 
-        console.log(`🟢 Assinatura criada no Stripe (${s.status}) para empresa: ${companyId}`);
+        console.log("🟢 Assinatura criada (dados completos):", {
+          companyId,
+          start: currentPeriodStart,
+          end: currentPeriodEnd,
+          trialEndsAt,
+        });
+
         break;
       }
+
 
       // =====================================================
       // 🔹 Outros eventos não tratados
