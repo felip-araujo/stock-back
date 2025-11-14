@@ -39,3 +39,27 @@ export const generateInvite = async (req, res) => {
     }
 };
 
+export const getInvite = async (req, res) => {
+    const inviteToken = req.query.token
+    
+
+    if (!inviteToken) {
+        res.status(400).json({ message: "Envie o token de convite!" })
+    }
+
+
+    try {
+        const resInv = await prisma.inviteLink.findMany({
+            where: {
+                token: inviteToken
+            }
+        })
+
+        if(resInv.length === 0){
+            res.status(400).json({message: "Convite não encontrado"})
+        }
+        res.status(200).json({ resInv })
+    } catch (err) {
+        res.status(400).json({ message: "Erro ao buscar invite", err })
+    }
+}

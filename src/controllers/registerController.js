@@ -4,6 +4,7 @@ import bcrypt from "bcrypt"
 export const registerWithInvite = async (req, res) => {
   try {
     const { name, email, password, inviteToken } = req.body;
+    const departmentId = Number(req.body)
 
     if (!name || !email || !password || !inviteToken) {
       return res.status(400).json({ message: "Campos obrigatórios não preenchidos" });
@@ -62,7 +63,8 @@ export const registerWithInvite = async (req, res) => {
         password: hashedPassword,
         companyId: invite.companyId,
         role: invite.role,
-        inviteId: invite.id, // registra de qual link veio
+        inviteId: invite.id, // registra de qual link 
+        departmentId: departmentId
       },
     });
 
@@ -72,7 +74,7 @@ export const registerWithInvite = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Erro ao registrar usuário", err}); 
+    return res.status(500).json({ message: "Erro ao registrar usuário", err });
   }
 };
 
